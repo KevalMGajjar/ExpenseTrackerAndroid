@@ -25,4 +25,7 @@ interface GroupDao {
 
     @Query("DELETE FROM `Groups`")
     suspend fun deleteAllGroups()
+
+    @Query("SELECT * FROM 'Groups' WHERE id = :id")
+    fun getGroupById(id: String): Flow<Group>
 }

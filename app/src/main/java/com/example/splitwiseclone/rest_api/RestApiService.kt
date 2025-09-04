@@ -53,7 +53,8 @@ data class AddFriendsRequest(
 )
 
 data class AddFriendResponse(
-    val friends: List<Friend>
+    val friends: List<Friend>,
+    val notFoundPhoneNumbers: List<String>? = null
 )
 
 data class GetAllFriendsRequest(

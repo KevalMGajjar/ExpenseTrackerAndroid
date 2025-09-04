@@ -1,124 +1,161 @@
 package com.example.splitwiseclone.ui.ui_components.homeui_com.add_new
 
-import android.widget.Toast
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.splitwiseclone.rest_api.api_viewmodels.GroupApiViewModel
+import com.example.splitwiseclone.roomdb.friends.Friend
 import com.example.splitwiseclone.roomdb.friends.FriendsRoomViewModel
 import com.example.splitwiseclone.roomdb.groups.GroupRoomViewModel
 import com.example.splitwiseclone.roomdb.groups.Member
 import com.example.splitwiseclone.ui_viewmodels.AddGroupMemberViewModel
-import com.example.splitwiseclone.ui_viewmodels.GroupViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddNewGroupMemberUi(
     navHostController: NavHostController,
-    friendsRoomViewModel: FriendsRoomViewModel,
-    addGroupMemberViewModel: AddGroupMemberViewModel,
-    groupApiViewModel: GroupApiViewModel,
-    groupViewModel: GroupViewModel,
-    groupRoomViewModel: GroupRoomViewModel
+    friendsRoomViewModel: FriendsRoomViewModel = hiltViewModel(),
+    addGroupMemberViewModel: AddGroupMemberViewModel = hiltViewModel(),
+    groupApiViewModel: GroupApiViewModel = hiltViewModel(),
+    groupRoomViewModel: GroupRoomViewModel = hiltViewModel()
 ) {
-
     val friendsList by friendsRoomViewModel.allUser.collectAsState()
     val selectedFriends by addGroupMemberViewModel.selectedFriends.collectAsState()
-    val isSelected by addGroupMemberViewModel.isSelected.collectAsState()
-    val context = LocalContext.current
-    val currentGroup by groupViewModel.currentGroup.collectAsState()
-    val newMembers = currentGroup.members?.toMutableList()
+    // FIX: Get the current group from the correct ViewModel
+    val currentGroup by addGroupMemberViewModel.currentGroup.collectAsState()
+    var searchQuery by remember { mutableStateOf("") }
 
-    Column {
-        Row {
-            //Search Bar
-        }
-        Box {
-            LazyColumn {
-                items(friendsList) { friend ->
-                    Card(
-                        onClick = {
-                            addGroupMemberViewModel.toggleSelectedFriend(friend)
-                            if (friend in selectedFriends) {
-                                addGroupMemberViewModel.setIsSelected(true)
-                            }
-                        },
-                        colors = CardDefaults.cardColors(
-                            contentColor = if (isSelected) Color.Blue else Color.White
-                        )
-                    ) {
-                        Row {
-                            AsyncImage(
-                                model = friend.profilePic,
-                                contentDescription = "friend profile photo",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.Gray)
-                            )
-                            Column {
-                                friend.username?.let { Text(text = it) }
-                                Spacer(modifier = Modifier.height(2.dp))
-                                friend.phoneNumber?.let { Text(text = it) }
-                            }
-                        }
+    // This logic now works correctly because `currentGroup` is loaded from the database.
+    val existingMemberIds = currentGroup?.members?.mapNotNull { it.userId } ?: emptyList()
+    val availableFriends = friendsList.filter { it.friendId !in existingMemberIds }
+
+    val filteredFriends = availableFriends.filter {
+        it.username?.contains(searchQuery, ignoreCase = true) == true ||
+                it.phoneNumber?.contains(searchQuery, ignoreCase = true) == true
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Add Members", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = { navHostController.popBackStack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
-            }
-            FloatingActionButton(onClick = {
-                if (selectedFriends.isNotEmpty()) {
-                    groupApiViewModel.addMembers(
-                        selectedFriends,
-                        currentGroup.id,
-                        onSuccess = {
-                            selectedFriends.forEach { friend ->
-                                newMembers?.add(
-                                    Member(
-                                        userId = friend.friendId,
-                                        role = "member",
-                                        username = friend.username!!,
-                                        email = friend.email,
-                                        profilePicture = friend.profilePic
-                                    )
+            )
+        },
+        floatingActionButton = {
+            if (selectedFriends.isNotEmpty()) {
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        currentGroup?.let { group ->
+                            val newMembers = selectedFriends.map { friend ->
+                                Member(
+                                    userId = friend.friendId,
+                                    role = "member",
+                                    username = friend.username ?: "",
+                                    email = friend.email,
+                                    profilePicture = friend.profilePic
                                 )
                             }
-                            groupRoomViewModel.updateGroup(
-                                currentGroup,
-                                onSuccess = { navHostController.navigate("groupsUi") })
-                        })
-                } else {
-                    Toast.makeText(context, "Please select a Friend", Toast.LENGTH_SHORT).show()
-                }
-            }) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add members"
+
+                            groupApiViewModel.addMembers(
+                                selectedFriends,
+                                group.id,
+                                onSuccess = {
+                                    val updatedGroup = group.copy(
+                                        members = (group.members ?: emptyList()) + newMembers
+                                    )
+                                    groupRoomViewModel.updateGroup(updatedGroup) {
+                                        navHostController.popBackStack()
+                                    }
+                                }
+                            )
+                        }
+                    },
+                    icon = { Icon(Icons.Default.Add, "Add Members") },
+                    text = { Text("Add ${selectedFriends.size} Member" + if (selectedFriends.size > 1) "s" else "") }
                 )
+            }
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .padding(horizontal = 16.dp)
+                .fillMaxSize()
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Search by name or number") },
+                leadingIcon = { Icon(Icons.Default.Search, null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
+            )
+
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(filteredFriends) { friend ->
+                    FriendSelectItem(
+                        friend = friend,
+                        isSelected = friend in selectedFriends,
+                        onFriendClicked = { addGroupMemberViewModel.toggleSelectedFriend(friend) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun FriendSelectItem(friend: Friend, isSelected: Boolean, onFriendClicked: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (isSelected) 4.dp else 1.dp),
+        colors = CardDefaults.cardColors(containerColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface)
+    ) {
+        Row(
+            modifier = Modifier
+                .clickable(onClick = onFriendClicked)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AsyncImage(
+                model = friend.profilePic,
+                contentDescription = "Profile Picture",
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = friend.username ?: "Friend", fontWeight = FontWeight.SemiBold)
+                Text(text = friend.phoneNumber ?: "", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+            }
+            if (isSelected) {
+                Icon(Icons.Default.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
             }
         }
     }

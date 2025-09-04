@@ -35,4 +35,8 @@ class ExpenseRepository @Inject constructor(
         return dao.getExpenseById(id)
     }
 
+    fun getExpensesByGroupId(groupId: String): Flow<List<Expense>> {
+        return dao.getExpensesByGroupId(groupId)
+    }
+
 }

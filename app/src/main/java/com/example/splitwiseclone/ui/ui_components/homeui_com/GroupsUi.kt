@@ -1,37 +1,23 @@
 package com.example.splitwiseclone.ui.ui_components.homeui_com
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Text
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -41,72 +27,128 @@ import com.example.splitwiseclone.roomdb.groups.GroupRoomViewModel
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
 import com.example.splitwiseclone.ui_viewmodels.AddGroupMemberViewModel
 import com.example.splitwiseclone.ui_viewmodels.GroupViewModel
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalStdlibApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GroupsUi(navHostController: NavHostController, groupRoomViewModel: GroupRoomViewModel, groupApiViewModel: GroupApiViewModel, currentUserViewModel: CurrentUserViewModel, addGroupMemberViewModel: AddGroupMemberViewModel, groupViewModel: GroupViewModel) {
-
-    val currentUser by currentUserViewModel.currentUser.collectAsState()
+fun GroupsUi(
+    navHostController: NavHostController,
+    groupRoomViewModel: GroupRoomViewModel,
+    groupApiViewModel: GroupApiViewModel,
+    currentUserViewModel: CurrentUserViewModel,
+    addGroupMemberViewModel: AddGroupMemberViewModel,
+    groupViewModel: GroupViewModel
+) {
     val groups by groupRoomViewModel.allGroups.collectAsState()
 
-        Column(modifier = Modifier.fillMaxSize()) {
-            Row {
-                CustomGroupTopBar(navHostController)
-            }
-            Spacer(modifier = Modifier.height(5.dp))
-
-            CustomGroupsLazyColumn(groups, navHostController, addGroupMemberViewModel, groupViewModel)
-        }
-}
-
-@Composable
-fun CustomGroupTopBar(navHostController: NavHostController){
-
-    Box(modifier = Modifier.fillMaxWidth().height(56.dp)) {
-        IconButton(onClick = {navHostController.navigate("addNewGroupUi")}, modifier = Modifier.align(Alignment.CenterStart)) {
-            Icon(imageVector = Icons.Default.AddCircle,
-                contentDescription = "add new friend")
-        }
-        Spacer(modifier = Modifier.width(15.dp))
-        Text(text="Groups", modifier = Modifier.align(Alignment.Center))
-    }
-}
-
-@Composable
-fun CustomGroupsLazyColumn(groups: List<Group>, navHostController: NavHostController, addGroupMemberViewModel: AddGroupMemberViewModel, groupViewModel: GroupViewModel){
-
-    LazyColumn {
-        items(groups){ group ->
-            GroupItem(group, navHostController, addGroupMemberViewModel, groupViewModel)
-        }
-
-    }
-}
-
-@Composable
-fun GroupItem(group: Group, navHostController: NavHostController, addGroupMemberViewModel: AddGroupMemberViewModel, groupViewModel: GroupViewModel) {
-
-    Card(onClick = {navHostController.navigate("groupsOuterProfileUi")
-                    groupViewModel.storeCurrentGroup(group)}) {
-        Row {
-            AsyncImage(
-                model = group.profilePicture,
-                contentDescription = "group profile photo",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .size(96.dp)
-                    .background(Color.Gray)
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Groups", fontWeight = FontWeight.Bold) },
+                actions = {
+                    IconButton(onClick = { navHostController.navigate("addNewGroupUi") }) {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add new group")
+                    }
+                }
             )
-            Column {
-                Text(text = group.groupName)
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            if (groups.isEmpty()) {
+                EmptyGroupsView(navController = navHostController)
+            } else {
+                LazyColumn(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(groups, key = { it.id }) { group ->
+                        GroupListItem(
+                            group = group,
+                            onClick = {
+                                groupViewModel.storeCurrentGroup(group)
+                                navHostController.navigate("groupsOuterProfileUi/${group.id}")
+                            }
+                        )
+                        HorizontalDivider(color = Color.LightGray.copy(alpha = 0.5f))
+                    }
+                }
             }
-
         }
     }
+}
 
+@Composable
+fun GroupListItem(group: Group, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        AsyncImage(
+            model = group.profilePicture,
+            contentDescription = "Group Profile Picture",
+            modifier = Modifier
+                .size(48.dp)
+                .clip(CircleShape)
+                .background(Color.LightGray),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = group.groupName ?: "Group",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium
+            )
+            Text(
+                text = "${group.members?.size ?: 0} members",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+        }
+    }
+}
+
+@Composable
+fun EmptyGroupsView(navController: NavHostController) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Default.Add,
+            contentDescription = "No Groups Found",
+            modifier = Modifier.size(120.dp),
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Text(
+            text = "No groups found",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "Add a new group to get started.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        Spacer(modifier = Modifier.height(24.dp))
+        Button(
+            onClick = { navController.navigate("addNewGroupUi") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text("Add a group")
+        }
+    }
 }

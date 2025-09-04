@@ -16,6 +16,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.core.view.WindowCompat
@@ -37,21 +38,21 @@ import com.example.splitwiseclone.roomdb.friends.FriendsRoomViewModel
 import com.example.splitwiseclone.roomdb.groups.GroupRoomViewModel
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
 import com.example.splitwiseclone.ui.theme.SplitWiseCloneTheme
+import com.example.splitwiseclone.ui.ui_components.AddExpenseUi
 import com.example.splitwiseclone.ui.ui_components.AddPhoneNumberUi
+import com.example.splitwiseclone.ui.ui_components.DashBoardUi
 import com.example.splitwiseclone.ui.ui_components.LoginUi
 import com.example.splitwiseclone.ui.ui_components.ProfileUi
 import com.example.splitwiseclone.ui.ui_components.SignUpUi
 import com.example.splitwiseclone.ui.ui_components.SplashScreen
 import com.example.splitwiseclone.ui.ui_components.WelcomeUi
 import com.example.splitwiseclone.ui.ui_components.homeui_com.ActivityUi
-import com.example.splitwiseclone.ui.ui_components.homeui_com.AddExpenseUi
-import com.example.splitwiseclone.ui.ui_components.homeui_com.DashBoardUi
 import com.example.splitwiseclone.ui.ui_components.homeui_com.FriendsUi
 import com.example.splitwiseclone.ui.ui_components.homeui_com.GroupsUi
 import com.example.splitwiseclone.ui.ui_components.homeui_com.add_new.AddNewFriendUi
 import com.example.splitwiseclone.ui.ui_components.homeui_com.add_new.AddNewGroupMemberUi
 import com.example.splitwiseclone.ui.ui_components.homeui_com.add_new.AddNewGroupUi
-import com.example.splitwiseclone.ui.ui_components.homeui_com.expense_ui.CustomPBSUUi
+import com.example.splitwiseclone.ui.ui_components.homeui_com.expense_ui.CustomPBUUi
 import com.example.splitwiseclone.ui.ui_components.homeui_com.expense_ui.CustomPaidByMultipleUi
 import com.example.splitwiseclone.ui.ui_components.homeui_com.expense_ui.CustomSplitUi
 import com.example.splitwiseclone.ui.ui_components.homeui_com.expense_ui.ExpenseDetailUi
@@ -61,6 +62,7 @@ import com.example.splitwiseclone.ui.ui_components.homeui_com.friend_profile_ui.
 import com.example.splitwiseclone.ui.ui_components.homeui_com.friend_profile_ui.FriendSettingsUi
 import com.example.splitwiseclone.ui.ui_components.homeui_com.group_profile_ui.GroupOuterProfileUi
 import com.example.splitwiseclone.ui.ui_components.homeui_com.group_profile_ui.GroupSettingsUi
+import com.example.splitwiseclone.ui.ui_components.homeui_com.friend_profile_ui.SettleUpScreen
 import com.example.splitwiseclone.ui_viewmodels.AddExpenseViewModel
 import com.example.splitwiseclone.ui_viewmodels.AddFriendViewModel
 import com.example.splitwiseclone.ui_viewmodels.AddGroupMemberViewModel
@@ -139,9 +141,19 @@ fun MainUi(navHostController: NavHostController) {
             composable("dashboard") {
                 DashBoardUi(navHostController)
             }
-            composable("addExpense") {
-                AddExpenseUi(navHostController, addExpenseViewModel, expenseApiViewModel, expenseRoomViewModel, currentUserViewModel, friendRoomViewModel, twoPersonExpenseViewModel, paidByViewModel, splitOptionsViewModel)
+            composable(
+                // Define the route with an optional groupId argument
+                route = "addExpense?groupId={groupId}",
+                arguments = listOf(
+                    navArgument("groupId") {
+                        type = NavType.StringType
+                        nullable = true // Mark it as optional
+                    }
+                )
+            ) {
+                AddExpenseUi(navHostController)
             }
+
             composable("friendsUi") {
                 FriendsUi(
                     navHostController,
@@ -153,7 +165,7 @@ fun MainUi(navHostController: NavHostController) {
                 )
             }
             composable("activity") {
-                ActivityUi()
+                ActivityUi(navHostController)
             }
             composable("addNewFriendUi") {
                 AddNewFriendUi(
@@ -184,8 +196,11 @@ fun MainUi(navHostController: NavHostController) {
                     currentUserViewModel
                 )
             }
-            composable("groupsOuterProfileUi") {
-                GroupOuterProfileUi(navHostController, groupViewModel)
+            composable(
+                route = "groupsOuterProfileUi/{groupId}",
+                arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+            ) {
+                GroupOuterProfileUi(navHostController)
             }
             composable("profileUi") {
                 ProfileUi(navHostController, currentUserViewModel)
@@ -193,34 +208,69 @@ fun MainUi(navHostController: NavHostController) {
             composable("splash") {
                 SplashScreen(navHostController, splashScreenViewModel, currentUserViewModel, syncViewModel)
             }
-            composable("addNewGroupMemberUi") {
-                AddNewGroupMemberUi(navHostController, friendRoomViewModel, addGroupMemberViewModel, groupApiViewModel, groupViewModel, groupRoomViewModel)
+            composable(
+                // Define the route with a *required* groupId argument
+                route = "addNewGroupMemberUi/{groupId}",
+                arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+            ) {
+                AddNewGroupMemberUi(
+                    navHostController = navHostController
+                )
             }
             composable("addPhoneNumberUi") {
                 AddPhoneNumberUi(navHostController, addPhoneNumberViewModel, userApiViewModel, currentUserViewModel)
             }
-            composable("friendSettingsUi") {
-                FriendSettingsUi(navHostController, friendsUiViewModel, friendApiViewModel, currentUserViewModel, friendRoomViewModel)
-            }
-            composable("groupSettingsUi") {
-                GroupSettingsUi(navHostController, groupViewModel, groupApiViewModel, groupRoomViewModel, currentUserViewModel)
-            }
-            composable("twoPersonExpenseUi") {
-                TwoPersonExpenseUi(navHostController, twoPersonExpenseViewModel, addExpenseViewModel, friendRoomViewModel)
-            }
-            composable("customPBUUi") {
-                CustomPBSUUi(navHostController, paidByViewModel, addExpenseViewModel)
-            }
-            composable("customPaidByMultipleUi") {
-                CustomPaidByMultipleUi(navHostController, paidByViewModel, addExpenseViewModel)
-            }
-            composable("customSplitUi") {
-                CustomSplitUi(navHostController, splitOptionsViewModel, addExpenseViewModel)
+            composable("friendSettingsUi/{friendId}") {
+                FriendSettingsUi(navHostController)
             }
             composable(
+                route = "groupSettingsUi/{groupId}",
+                arguments = listOf(navArgument("groupId") { type = NavType.StringType })
+            ) {
+                GroupSettingsUi(navController = navHostController)
+            }
+            composable(
+                route = "twoPersonExpenseUi/{friendId}",
+                arguments = listOf(navArgument("friendId") { type = NavType.StringType })
+            ) { backStackEntry ->
+                // Extract the friendId from the route arguments
+                val friendId = backStackEntry.arguments?.getString("friendId")
+
+                // Ensure the ID is not null, and pass it to the composable
+                requireNotNull(friendId) { "Friend ID is required for this screen." }
+                TwoPersonExpenseUi(
+                    navHostController = navHostController,
+                    friendId = friendId
+                )
+            }
+            composable("customPBUUi") {
+                // Get the back stack entry for the parent screen
+                val parentEntry = remember(it) {
+                    navHostController.getBackStackEntry("addExpense?groupId={groupId}")
+                }
+                // Pass the parent entry to the composable
+                CustomPBUUi(navController = navHostController, parentEntry = parentEntry)
+            }
+            composable("customPaidByMultipleUi") {
+                val parentEntry = remember(it) {
+                    navHostController.getBackStackEntry("addExpense?groupId={groupId}")
+                }
+                CustomPaidByMultipleUi(navController = navHostController, parentEntry = parentEntry)
+            }
+            composable("customSplitUi") {
+                val parentEntry = remember(it) {
+                    navHostController.getBackStackEntry("addExpense?groupId={groupId}")
+                }
+                CustomSplitUi(navController = navHostController, parentEntry = parentEntry)
+            }
+
+            composable(
+                // Define the route with a *required* expenseId argument
                 route = "expenseDetail/{expenseId}",
                 arguments = listOf(navArgument("expenseId") { type = NavType.StringType })
             ) {
+                // The ViewModel will automatically receive the expenseId from the route
+                // thanks to Hilt and SavedStateHandle.
                 ExpenseDetailUi(navController = navHostController)
             }
 
@@ -229,6 +279,12 @@ fun MainUi(navHostController: NavHostController) {
                 arguments = listOf(navArgument("expenseId") { type = NavType.StringType })
             ) {
                 ExpenseEditUi(navController = navHostController, friendsRoomViewModel = friendRoomViewModel, paidByViewModel = paidByViewModel, splitOptionsViewModel = splitOptionsViewModel, twoPersonExpenseViewModel = twoPersonExpenseViewModel, currentUserViewModel = currentUserViewModel)
+            }
+            composable(
+                "settleUp/{friendId}",
+                arguments = listOf(navArgument("friendId") { type = NavType.StringType })
+            ) {
+                SettleUpScreen(navController = navHostController)
             }
         }
     }
@@ -252,7 +308,7 @@ fun BottomNavigationBar(navHostController: NavHostController) {
 
     val currentRoute = navHostController.currentBackStackEntryAsState().value?.destination?.route
 
-    val noBottomBarRoutes = listOf("login", "welcome", "splash", "signup", "addPhoneNumberUi", "expenseDetailUi", "expenseEditUi", "customSplitUi", "customPaidByMultipleUi", "customPBUUi", "woPersonExpenseUi", "woPersonExpenseUi", "friendSettingsUi", "addPhoneNumberUi", "addNewGroupMemberUi", "addNewFriendUi", "friendsOuterProfileUi", "profileUi", "groupsOuterProfileUi", "addNewGroupUi")
+    val noBottomBarRoutes = listOf("login", "welcome", "splash", "signup", "addPhoneNumberUi", "expenseDetailUi", "expenseEditUi", "customSplitUi", "customPaidByMultipleUi", "customPBUUi", "woPersonExpenseUi", "woPersonExpenseUi", "friendSettingsUi", "addPhoneNumberUi", "addNewGroupMemberUi", "addNewFriendUi", "friendsOuterProfileUi", "profileUi", "groupsOuterProfileUi", "addNewGroupUi", "settleUp/{friendId}")
 
     if(currentRoute !in noBottomBarRoutes) {
 

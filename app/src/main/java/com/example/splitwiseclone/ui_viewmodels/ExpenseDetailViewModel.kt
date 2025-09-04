@@ -4,57 +4,86 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.splitwiseclone.central.SyncRepository
-import com.example.splitwiseclone.rest_api.RestApiService
+import com.example.splitwiseclone.rest_api.RestApiService // FIX: Import the API service
 import com.example.splitwiseclone.roomdb.expense.Expense
 import com.example.splitwiseclone.roomdb.expense.ExpenseRepository
+import com.example.splitwiseclone.roomdb.friends.Friend
+import com.example.splitwiseclone.roomdb.friends.FriendRepository
+import com.example.splitwiseclone.roomdb.user.CurrentUser
+import com.example.splitwiseclone.roomdb.user.CurrentUserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// Data classes remain the same
+data class ParticipantDetails(
+    val name: String,
+    val profilePic: String
+)
+
+data class ExpenseDetailUiState(
+    val expense: Expense? = null,
+    val userDetailsMap: Map<String, ParticipantDetails> = emptyMap(),
+    val isLoading: Boolean = true
+)
+
 @HiltViewModel
 class ExpenseDetailViewModel @Inject constructor(
+    // FIX: Inject repositories and the API service directly, NOT other ViewModels.
     private val expenseRepository: ExpenseRepository,
-    private val syncRepository: SyncRepository,
+    private val friendRepository: FriendRepository,
+    private val userRepository: CurrentUserRepository,
     private val apiService: RestApiService,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // 1. Get a FLOW of the expenseId from navigation. This is reactive.
-    private val expenseIdFlow: StateFlow<String> = savedStateHandle.getStateFlow("expenseId", "")
+    private val expenseId: StateFlow<String?> = savedStateHandle.getStateFlow("expenseId", null)
 
-    // 2. Use `flatMapLatest` to create a new flow that automatically updates
-    //    whenever the expenseIdFlow changes.
-    val expense: StateFlow<Expense?> = expenseIdFlow.flatMapLatest { id ->
-        if (id.isEmpty()) {
-            flowOf(null) // If no ID, emit null
-        } else {
-            // This will now correctly re-run the query when the ID is available.
-            expenseRepository.getExpenseById(id)
+    val uiState: StateFlow<ExpenseDetailUiState> = expenseId.filterNotNull().flatMapLatest { id ->
+        combine(
+            expenseRepository.getExpenseById(id),
+            friendRepository.allFriends,
+            userRepository.currentUser
+        ) { expense: Expense?, friends: List<Friend>, currentUser: CurrentUser? ->
+            if (expense == null || currentUser == null) {
+                return@combine ExpenseDetailUiState(isLoading = true)
+            }
+
+            val userMap = mutableMapOf<String, ParticipantDetails>()
+            userMap[currentUser.currentUserId] = ParticipantDetails(currentUser.username, currentUser.profileUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/1024px-Default_pfp.svg.png")
+            friends.forEach { friend ->
+                userMap[friend.friendId] = ParticipantDetails(friend.username ?: "Friend", friend.profilePic)
+            }
+
+            ExpenseDetailUiState(
+                expense = expense,
+                userDetailsMap = userMap,
+                isLoading = false
+            )
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = ExpenseDetailUiState()
+    )
 
     fun deleteExpense(onSuccess: () -> Unit) {
-        viewModelScope.launch {
-            val expenseToDelete = expense.value
-            val currentExpenseId = expenseIdFlow.value // Use the value from the flow
+        val expenseToDelete = uiState.value.expense ?: return
 
-            if (expenseToDelete != null && currentExpenseId.isNotEmpty()) {
-                try {
-                    apiService.deleteExpense(currentExpenseId)
+        viewModelScope.launch {
+            // FIX: The API call logic is now self-contained within this ViewModel.
+            try {
+                val response = apiService.deleteExpense(expenseToDelete.id)
+                if (response.isSuccessful) {
+                    Log.d("ExpenseDetailViewModel", "Successfully deleted expense on server.")
                     expenseRepository.deleteExpense(expenseToDelete)
-                    syncRepository.syncAllData()
                     onSuccess()
-                } catch (e: Exception) {
-                    Log.e("ExpenseDetailViewModel", "Error deleting expense", e)
+                } else {
+                    Log.e("ExpenseDetailViewModel", "API error deleting expense: ${response.code()}")
                 }
-            } else {
-                Log.e("ExpenseDetailViewModel", "Attempted to delete with null expense or empty ID.")
+            } catch (e: Exception) {
+                Log.e("ExpenseDetailViewModel", "Exception while deleting expense", e)
             }
         }
     }

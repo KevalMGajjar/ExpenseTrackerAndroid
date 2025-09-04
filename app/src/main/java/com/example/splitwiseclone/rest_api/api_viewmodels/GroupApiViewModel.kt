@@ -29,9 +29,8 @@ class GroupApiViewModel @Inject constructor(
     private val apiClient: ApiClient
 ): ViewModel() {
 
-    fun saveGroup(group: GroupApi, onSuccess: () -> Unit): String {
-
-        var groupCreatedId: String = ""
+    fun saveGroup(group: GroupApi, onSuccess: (newGroupId: String) -> Unit) {
+        // Note: The function does not return a String anymore.
 
         val request = SaveGroupRequest(
             groupName = group.groupName,
@@ -39,17 +38,25 @@ class GroupApiViewModel @Inject constructor(
             groupCreatedByUserId = group.groupCreatedByUserId,
             type = group.groupType
         )
+
         viewModelScope.launch {
             try {
-                groupCreatedId = apiService.addGroup(request).groupId
+                // 1. Wait for the API call to complete and get the ID.
+                val groupCreatedId = apiService.addGroup(request).groupId
+
+                // 2. Perform any other necessary operations, like syncing data.
                 syncRepository.syncAllData()
-            } catch (e: Exception){
-                Log.e("error", "error while adding group", e)
+
+                // 3. AFTER everything is successful, call the onSuccess callback
+                //    and pass the new ID back to the UI.
+                onSuccess(groupCreatedId)
+
+            } catch (e: Exception) {
+                Log.e("GroupApiViewModel", "Error while adding group", e)
+                // Optionally, you could add an onError callback here to notify the UI of a failure.
             }
         }
-        onSuccess()
-        return groupCreatedId
-
+        // The immediate return and onSuccess() call are removed from here.
     }
 
     fun getAllGroups(userId: String?){

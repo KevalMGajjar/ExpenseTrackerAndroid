@@ -1,41 +1,33 @@
 package com.example.splitwiseclone.ui.ui_components.homeui_com.expense_ui
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
+import com.example.splitwiseclone.ui_viewmodels.ExpenseDetailUiState
 import com.example.splitwiseclone.ui_viewmodels.ExpenseDetailViewModel
+import com.example.splitwiseclone.ui_viewmodels.ParticipantDetails
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,57 +35,41 @@ fun ExpenseDetailUi(
     navController: NavHostController,
     viewModel: ExpenseDetailViewModel = hiltViewModel()
 ) {
-    val expense by viewModel.expense.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(expense?.description ?: "Expense Detail") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
+                title = { Text("Expense Details") },
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
                 actions = {
-                    IconButton(onClick = { showDeleteDialog = true }) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete")
-                    }
                     IconButton(onClick = {
-                        // Safely navigate only if the expense ID exists
-                        expense?.id?.let {
-                            navController.navigate("expenseEdit/$it")
-                        }
-                    }) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
-                    }
+                        uiState.expense?.id?.let { navController.navigate("expenseEdit/$it") }
+                    }) { Icon(Icons.Default.Edit, "Edit") }
+                    IconButton(onClick = { showDeleteDialog = true }) { Icon(Icons.Default.Delete, "Delete") }
                 }
             )
         }
     ) { paddingValues ->
-        // This is a great pattern for handling loading/success states
-        expense?.let { exp ->
-            LazyColumn(modifier = Modifier
-                .padding(paddingValues)
-                .padding(16.dp)) {
-                item {
-                    Text("Total Amount: ${exp.totalExpense}", style = MaterialTheme.typography.headlineSmall)
-                    Text("Added by: You on ${exp.expenseDate}", style = MaterialTheme.typography.bodySmall)
-                    Text("Paid by: ${exp.paidByUserIds.size} people", style = MaterialTheme.typography.bodyMedium)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Split Details:", style = MaterialTheme.typography.titleMedium)
-                }
-
-                items(exp.splits) { split ->
-                    // Here you would look up the usernames from the IDs
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Text("${split.owedByUserId} owes ${split.owedToUserId}", modifier = Modifier.weight(1f))
-                        Text("₹${split.owedAmount}") // Added a currency symbol for context
-                    }
+        if (uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else {
+            uiState.expense?.let { expense ->
+                LazyColumn(
+                    modifier = Modifier
+                        .padding(paddingValues)
+                        .fillMaxSize(),
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    item { ExpenseHeader(expense, uiState.userDetailsMap) }
+                    item { PaidBySection(expense, uiState.userDetailsMap) }
+                    item { SplitDetailsSection(expense, uiState.userDetailsMap) }
                 }
             }
-        } ?: Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
         }
     }
 
@@ -105,17 +81,124 @@ fun ExpenseDetailUi(
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.deleteExpense {
-                            navController.popBackStack()
-                        }
+                        viewModel.deleteExpense { navController.popBackStack() }
                         showDeleteDialog = false
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) { Text("Delete") }
             },
             dismissButton = {
-                Button(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+                TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
             }
         )
     }
 }
+
+@Composable
+fun ExpenseHeader(expense: com.example.splitwiseclone.roomdb.expense.Expense, userMap: Map<String, ParticipantDetails>) {
+    val creatorName = userMap[expense.createdById]?.name ?: "Someone"
+    val formattedDate = expense.expenseDate.toDate()?.toFormattedString() ?: expense.expenseDate
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+        Icon(
+            imageVector = getCategoryIcon(expense.description ?: ""),
+            contentDescription = "Category",
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.primary
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(text = expense.description ?: "Expense", style = MaterialTheme.typography.headlineSmall)
+        Text(
+            text = String.format(Locale.US, "$%.2f", expense.totalExpense),
+            style = MaterialTheme.typography.displaySmall,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "Added by $creatorName on $formattedDate",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.Gray
+        )
+    }
+}
+
+@Composable
+fun PaidBySection(expense: com.example.splitwiseclone.roomdb.expense.Expense, userMap: Map<String, ParticipantDetails>) {
+    Card {
+        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+            Text("Paid by", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            expense.paidByUserIds.forEach { payerId ->
+                val payerDetails = userMap[payerId]
+                val amountPaid = expense.totalExpense / expense.paidByUserIds.size // Assuming equal payment for now
+                DetailRow(
+                    imageUrl = payerDetails?.profilePic ?: "",
+                    name = payerDetails?.name ?: "Unknown",
+                    detail = "paid ${String.format(Locale.US, "$%.2f", amountPaid)}"
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SplitDetailsSection(expense: com.example.splitwiseclone.roomdb.expense.Expense, userMap: Map<String, ParticipantDetails>) {
+    Card {
+        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+            Text("Split details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+            expense.splits.forEach { split ->
+                val owedBy = userMap[split.owedByUserId]?.name ?: "Someone"
+                val owedTo = userMap[split.owedToUserId]?.name ?: "someone"
+                DetailRow(
+                    imageUrl = userMap[split.owedByUserId]?.profilePic ?: "",
+                    name = owedBy,
+                    detail = "owes $owedTo",
+                    amount = split.owedAmount
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DetailRow(imageUrl: String, name: String, detail: String, amount: Double? = null) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = name,
+            modifier = Modifier
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(Color.LightGray),
+            contentScale = ContentScale.Crop
+        )
+        Spacer(Modifier.width(16.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = name, fontWeight = FontWeight.SemiBold)
+            Text(text = detail, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        }
+        amount?.let {
+            Text(
+                text = String.format(Locale.US, "$%.2f", it),
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
+// --- Helper Functions ---
+private fun getCategoryIcon(description: String): ImageVector {
+    return when {
+        "uber" in description.lowercase() -> Icons.Default.PlayArrow
+        "grocer" in description.lowercase() -> Icons.Default.ShoppingCart
+        "cinema" in description.lowercase() || "movie" in description.lowercase() -> Icons.Default.PlayArrow
+        "present" in description.lowercase() || "gift" in description.lowercase() -> Icons.Default.PlayArrow
+        else -> Icons.Default.Menu
+    }
+}
+
+private fun String.toDate(): Date? = try {
+    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(this)
+} catch (e: Exception) { null }
+
+private fun Date.toFormattedString(): String = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(this)

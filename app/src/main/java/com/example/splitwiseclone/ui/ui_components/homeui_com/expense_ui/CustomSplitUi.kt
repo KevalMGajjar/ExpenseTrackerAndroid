@@ -1,30 +1,22 @@
 package com.example.splitwiseclone.ui.ui_components.homeui_com.expense_ui
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import com.example.splitwiseclone.ui_viewmodels.AddExpenseViewModel
 import com.example.splitwiseclone.ui_viewmodels.SplitOptionsViewModel
@@ -34,9 +26,12 @@ import com.example.splitwiseclone.ui_viewmodels.SplitType
 @Composable
 fun CustomSplitUi(
     navController: NavHostController,
-    splitOptionsViewModel: SplitOptionsViewModel,
-    addExpenseViewModel: AddExpenseViewModel
+    parentEntry: NavBackStackEntry
 ) {
+    // Scope ViewModels to the parent screen's navigation entry to share state
+    val splitOptionsViewModel: SplitOptionsViewModel = hiltViewModel(parentEntry)
+    val addExpenseViewModel: AddExpenseViewModel = hiltViewModel(parentEntry)
+
     val participants by splitOptionsViewModel.participants.collectAsState()
     val splitType by splitOptionsViewModel.splitType.collectAsState()
     val unequalAmounts by splitOptionsViewModel.unequalSplitAmounts.collectAsState()
@@ -44,53 +39,58 @@ fun CustomSplitUi(
     val amountLeft by splitOptionsViewModel.amountLeft.collectAsState()
     val totalAmount by splitOptionsViewModel.totalAmount.collectAsState()
 
-    Column {
-        Box(modifier = Modifier.fillMaxWidth().height(56.dp)) {
-            Text("Adjust split", modifier = Modifier.align(Alignment.Center))
-            IconButton(onClick = {
-                val splitText = if(splitType == SplitType.EQUALLY) "Split Equally" else "Split Unequally"
-                addExpenseViewModel.commitSplitSelection(
-                    splits = splitOptionsViewModel.finalSplits,
-                    text = splitText
-                )
-                navController.popBackStack()
-            }, modifier = Modifier.align(Alignment.CenterEnd)) {
-                Icon(Icons.Default.Check, contentDescription = "Done")
-            }
-        }
-
-        SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-            SegmentedButton(
-                selected = splitType == SplitType.EQUALLY,
-                onClick = { splitOptionsViewModel.selectSplitType(SplitType.EQUALLY) },
-                shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-            ) { Text("Equally") }
-            SegmentedButton(
-                selected = splitType == SplitType.UNEQUALLY,
-                onClick = { splitOptionsViewModel.selectSplitType(SplitType.UNEQUALLY) },
-                shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-            ) { Text("Unequally") }
-        }
-
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(participants) { participant ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = true, onCheckedChange = null) // Always checked
-                    Text(participant.name, modifier = Modifier.weight(1f))
-                    if (splitType == SplitType.UNEQUALLY) {
-                        OutlinedTextField(
-                            value = unequalAmounts[participant.id] ?: "",
-                            onValueChange = { amount -> splitOptionsViewModel.updateUnequalAmount(participant.id, amount) }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Adjust split", fontWeight = FontWeight.Bold) },
+                navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
+                actions = {
+                    IconButton(onClick = {
+                        val splitText = if(splitType == SplitType.EQUALLY) "Split Equally" else "Split Unequally"
+                        addExpenseViewModel.commitSplitSelection(
+                            newSplits = splitOptionsViewModel.finalSplits,
+                            text = splitText
                         )
+                        navController.popBackStack()
+                    }) { Icon(Icons.Default.Check, "Done") }
+                }
+            )
+        }
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize()) {
+            SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                SegmentedButton(selected = splitType == SplitType.EQUALLY, onClick = { splitOptionsViewModel.selectSplitType(SplitType.EQUALLY) }, shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)) { Text("Equally") }
+                SegmentedButton(selected = splitType == SplitType.UNEQUALLY, onClick = { splitOptionsViewModel.selectSplitType(SplitType.UNEQUALLY) }, shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)) { Text("Unequally") }
+            }
+
+            LazyColumn(modifier = Modifier.weight(1f).padding(top = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(participants) { participant ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(checked = true, onCheckedChange = null)
+                        Text(participant.name, modifier = Modifier.weight(1f))
+                        if (splitType == SplitType.UNEQUALLY) {
+                            OutlinedTextField(
+                                value = unequalAmounts[participant.id] ?: "",
+                                onValueChange = { amount -> splitOptionsViewModel.updateUnequalAmount(participant.id, amount) },
+                                prefix = { Text("$") }
+                            )
+                        }
                     }
                 }
             }
-        }
 
-        Row(modifier = Modifier.fillMaxWidth()) {
-            Text("$amountSplit of $totalAmount")
-            Spacer(Modifier.weight(1f))
-            Text("$amountLeft left")
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                tonalElevation = 4.dp,
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Row(modifier = Modifier.padding(16.dp)) {
+                    Text("Total: $$amountSplit of $$totalAmount")
+                    Spacer(Modifier.weight(1f))
+                    val amountLeftColor = if (amountLeft.toDouble() == 0.0) Color.Green else MaterialTheme.colorScheme.error
+                    Text("$$amountLeft left", color = amountLeftColor)
+                }
+            }
         }
     }
 }

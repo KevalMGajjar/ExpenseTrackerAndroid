@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.material3) // This should be version 1.2.1 or managed by the BOM
     implementation("androidx.navigation:navigation-compose:$nav_version")
+    implementation("androidx.compose.material3:material3:1.2.1")
 
     // Hilt for Dependency Injection
     implementation("com.google.dagger:hilt-android:2.51.1")

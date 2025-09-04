@@ -32,4 +32,7 @@ interface ExpenseDao {
     @Query("SELECT * FROM expenses WHERE id = :id")
     fun getExpenseById(id: String): Flow<Expense>
 
+    @Query("SELECT * FROM expenses WHERE groupId = :groupId")
+    fun getExpensesByGroupId(groupId: String): Flow<List<Expense>>
+
 }

@@ -25,4 +25,8 @@ class GroupRepository @Inject constructor(
     suspend fun deleteAllGroups(){
         dao.deleteAllGroups()
     }
+
+    fun getGroupById(id: String): Flow<Group> {
+        return dao.getGroupById(id)
+    }
 }

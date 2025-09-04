@@ -22,7 +22,6 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.splitwiseclone.roomdb.friends.FriendsRoomViewModel
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
-import com.example.splitwiseclone.ui.ui_components.homeui_com.CustomDatePicker
 import com.example.splitwiseclone.ui_viewmodels.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,8 +76,6 @@ fun ExpenseEditUi(
                     }
                 }
             }
-
-            CustomDatePicker(date = date, onDateSelected = { viewModel.onDateSelected(it) })
 
             OutlinedTextField(
                 value = description,
