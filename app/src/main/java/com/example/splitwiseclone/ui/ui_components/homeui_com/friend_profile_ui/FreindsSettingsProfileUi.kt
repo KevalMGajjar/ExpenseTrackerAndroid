@@ -3,6 +3,8 @@ package com.example.splitwiseclone.ui.ui_components.homeui_com.friend_profile_ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -20,108 +22,102 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.example.splitwiseclone.rest_api.api_viewmodels.FriendApiViewModel
-import com.example.splitwiseclone.roomdb.friends.Friend
-import com.example.splitwiseclone.roomdb.friends.FriendsRoomViewModel
-import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
-import com.example.splitwiseclone.ui_viewmodels.FriendProfileViewModel
+import com.example.splitwiseclone.roomdb.entities.Friend
+import com.example.splitwiseclone.roomdb.entities.Group
+import com.example.splitwiseclone.ui_viewmodels.FriendSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendSettingsUi(
     navController: NavHostController,
-    friendProfileViewModel: FriendProfileViewModel = hiltViewModel(),
-    friendApiViewModel: FriendApiViewModel = hiltViewModel(),
-    currentUserViewModel: CurrentUserViewModel = hiltViewModel(),
-    friendsRoomViewModel: FriendsRoomViewModel = hiltViewModel()
+    // Use the new, dedicated ViewModel
+    viewModel: FriendSettingsViewModel = hiltViewModel()
 ) {
-    val uiState by friendProfileViewModel.uiState.collectAsState()
-    val friend = uiState.friend
-    val currentUser by currentUserViewModel.currentUser.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { /* No title needed for this design */ },
+                title = { Text("Friend Settings") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    scrolledContainerColor = MaterialTheme.colorScheme.surface
-                )
+                }
             )
         }
     ) { padding ->
-        if (friend != null) {
-            Column(
+        if (uiState.isLoading || uiState.friend == null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else {
+            val friend = uiState.friend!!
+            val sharedGroups = uiState.sharedGroups
+
+            LazyColumn(
                 modifier = Modifier
                     .padding(padding)
                     .fillMaxSize()
             ) {
-                UserInfoHeader(friend)
-                Spacer(modifier = Modifier.height(24.dp))
+                item {
+                    UserInfoHeader(friend)
+                    Spacer(modifier = Modifier.height(24.dp))
+                    SectionTitle("Manage relationship")
+                    HorizontalDivider()
+                }
+                item {
+                    SettingsActionRow(
+                        title = "Delete friend",
+                        subtitle = "Remove this user from your friends list.",
+                        onClick = { showDeleteDialog = true }
+                    )
+                    HorizontalDivider()
+                }
+                item {
+                    SettingsActionRow(
+                        title = "Report user",
+                        subtitle = "Flag an abusive, suspicious or spam account.",
+                        onClick = { /* TODO: Implement report logic */ }
+                    )
+                    Spacer(modifier = Modifier.height(32.dp))
+                    SectionTitle("Shared groups (${sharedGroups.size})")
+                    HorizontalDivider()
+                }
 
-                // Manage Relationship Section
-                SectionTitle("Manage relationship")
-                HorizontalDivider()
-                SettingsActionRow(
-                    title = "Delete friend",
-                    subtitle = "Remove this user from your friends list, hide any shared groups, and suppress future notifications.",
-                    onClick = { showDeleteDialog = true }
-                )
-                HorizontalDivider()
-                SettingsActionRow(
-                    title = "Report user",
-                    subtitle = "Flag an abusive, suspicious or spam account.",
-                    onClick = { /* TODO: Implement report logic */ }
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // Shared Groups Section
-                SectionTitle("Shared groups")
-                HorizontalDivider()
-                SharedGroupRow(
-                    imageUrl = "https://example.com/group_image.png", // Placeholder image
-                    groupName = "Adventurers",
-                    subtitle = "since May 2017",
-                    onClick = { /* TODO: Navigate to group details */ }
-                )
-                HorizontalDivider()
-            }
-        } else {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                // FIX: Display the list of actual shared groups
+                items(sharedGroups) { group ->
+                    SharedGroupRow(
+                        group = group,
+                        onClick = { navController.navigate("groupsOuterProfileUi/${group.id}") }
+                    )
+                    HorizontalDivider()
+                }
             }
         }
 
-        if (showDeleteDialog && friend != null) {
+        if (showDeleteDialog && uiState.friend != null) {
             AlertDialog(
                 onDismissRequest = { showDeleteDialog = false },
                 title = { Text("Delete Friend") },
-                text = { Text("Are you sure you want to permanently delete ${friend.username}? This action cannot be undone.") },
+                text = { Text("Are you sure you want to permanently delete ${uiState.friend!!.username}? This action cannot be undone.") },
                 confirmButton = {
                     Button(
                         onClick = {
-                            friendApiViewModel.deleteFriend(
-                                currentUserId = currentUser?.currentUserId ?: "",
-                                friendId = friend.friendId,
-                                onSuccess = {
-                                    friendsRoomViewModel.deleteFriend(friend) {}
-                                    showDeleteDialog = false
-                                    // Navigate all the way back to the main friends list
-                                    navController.popBackStack("friendsUi", false)
+                            viewModel.deleteFriend {
+                                // On success, navigate all the way back to the main friends list
+                                showDeleteDialog = false
+                                navController.navigate("friendsUi") {
+                                    popUpTo("dashboard") { inclusive = false }
                                 }
-                            )
+                            }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) { Text("Delete") }
                 },
                 dismissButton = {
-                    Button(onClick = { showDeleteDialog = false }) { Text("Cancel") }
+                    TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
                 }
             )
         }
@@ -131,32 +127,18 @@ fun FriendSettingsUi(
 @Composable
 private fun UserInfoHeader(friend: Friend) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         AsyncImage(
             model = friend.profilePic,
             contentDescription = "Profile Picture",
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(Color.LightGray),
+            modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.LightGray),
             contentScale = ContentScale.Crop
         )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = friend.username ?: "Friend",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "${friend.username?.lowercase()}@email.com", // Placeholder email
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
-        )
+        Text(text = friend.username ?: "Friend", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(text = friend.email ?: "No email", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
     }
 }
 
@@ -166,77 +148,44 @@ private fun SectionTitle(text: String) {
         text = text,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }
 
 @Composable
 private fun SettingsActionRow(title: String, subtitle: String, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(title, fontSize = 16.sp)
+            Text(title, fontSize = 16.sp, color = if (title == "Delete friend") MaterialTheme.colorScheme.error else Color.Unspecified)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                lineHeight = 16.sp
-            )
+            Text(text = subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, lineHeight = 16.sp)
         }
         Spacer(modifier = Modifier.width(16.dp))
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = Color.Gray
-        )
+        Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
     }
 }
 
 @Composable
-private fun SharedGroupRow(
-    imageUrl: String,
-    groupName: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
+private fun SharedGroupRow(group: Group, onClick: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         AsyncImage(
-            model = imageUrl,
+            model = group.profilePicture,
             contentDescription = "Group Image",
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(Color.LightGray),
+            modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.LightGray),
             contentScale = ContentScale.Crop
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(groupName, fontSize = 16.sp)
+            Text(group.groupName ?: "Group", fontSize = 16.sp)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Text(text = "${group.members?.size ?: 0} members", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = Color.Gray
-        )
+        Icon(imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
     }
 }

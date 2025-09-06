@@ -227,6 +227,16 @@ fun UserNotFoundDialog(phoneNumber: String, onDismiss: () -> Unit, onInvite: () 
     )
 }
 
+private fun normalizePhoneNumber(number: String): String {
+    val cleaned = number.replace(Regex("[^0-9+]"), "")
+    return when {
+        cleaned.startsWith("+91") && cleaned.length == 13 -> cleaned
+        cleaned.startsWith("0") && cleaned.length == 11 -> "+91" + cleaned.substring(1)
+        cleaned.length == 10 -> "+91$cleaned"
+        else -> cleaned // Return as-is if it's an unknown format
+    }
+}
+
 fun readContacts(context: Context): List<ContactInfo> {
     val contactMap = mutableMapOf<String, MutableSet<String>>()
     val contentResolver = context.contentResolver
@@ -250,9 +260,10 @@ fun readContacts(context: Context): List<ContactInfo> {
 
         while (it.moveToNext()) {
             val name = it.getString(nameIndex)
-            val number = it.getString(numberIndex).replace("\\s".toRegex(), "")
-            if (name != null && number != null) {
-                contactMap.getOrPut(name) { mutableSetOf() }.add(number)
+            val rawNumber = it.getString(numberIndex).replace("\\s".toRegex(), "")
+            if (name != null && rawNumber != null) {
+                val normalizedNumber = normalizePhoneNumber(rawNumber)
+                contactMap.getOrPut(name) { mutableSetOf() }.add(normalizedNumber)
             }
         }
     }

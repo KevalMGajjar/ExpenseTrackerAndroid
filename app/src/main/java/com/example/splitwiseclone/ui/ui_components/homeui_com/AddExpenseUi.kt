@@ -25,24 +25,21 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.example.splitwiseclone.rest_api.SplitDto
 import com.example.splitwiseclone.rest_api.api_viewmodels.ExpenseApiViewModel
-import com.example.splitwiseclone.roomdb.expense.Expense
+import com.example.splitwiseclone.roomdb.entities.Expense
 import com.example.splitwiseclone.roomdb.expense.ExpenseRoomViewModel
-import com.example.splitwiseclone.roomdb.expense.Splits
-import com.example.splitwiseclone.roomdb.friends.Friend
+import com.example.splitwiseclone.roomdb.entities.Splits
+import com.example.splitwiseclone.roomdb.entities.Friend
 import com.example.splitwiseclone.roomdb.friends.FriendsRoomViewModel
-import com.example.splitwiseclone.roomdb.groups.Group
+import com.example.splitwiseclone.roomdb.entities.Group
 import com.example.splitwiseclone.roomdb.groups.GroupRoomViewModel
-import com.example.splitwiseclone.roomdb.user.CurrentUser
+import com.example.splitwiseclone.roomdb.entities.CurrentUser
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
 import com.example.splitwiseclone.ui_viewmodels.AddExpenseViewModel
 import com.example.splitwiseclone.ui_viewmodels.PaidByViewModel
 import com.example.splitwiseclone.ui_viewmodels.Participant
 import com.example.splitwiseclone.ui_viewmodels.SplitOptionsViewModel
 import com.example.splitwiseclone.ui_viewmodels.TwoPersonExpenseViewModel
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.max
@@ -69,15 +66,17 @@ fun AddExpenseUi(
     val allGroups by groupRoomViewModel.allGroups.collectAsState()
     val participants by addExpenseViewModel.participants.collectAsState()
     val selectedGroupId by addExpenseViewModel.selectedGroupId.collectAsState()
-    val twoPersonSplitType by twoPersonExpenseViewModel.selectedSplit.collectAsState()
     val splits by addExpenseViewModel.splits.collectAsState()
     val paidByUserIds by addExpenseViewModel.paidByUserIds.collectAsState()
+    val twoPersonSplitType by twoPersonExpenseViewModel.selectedSplit.collectAsState()
 
-    LaunchedEffect(Unit) {
-        val user = currentUserViewModel.currentUser.filterNotNull().first()
-        addExpenseViewModel.addCurrentUserToParticipants(user.currentUserId)
+    LaunchedEffect(currentUser) {
+        currentUser?.let { user ->
+            addExpenseViewModel.addCurrentUserToParticipants(user.currentUserId)
+        }
     }
 
+    // This effect now correctly generates the splits for a 2-person expense
     LaunchedEffect(twoPersonSplitType, totalAmount, participants, currentUser) {
         if (participants.size == 2 && totalAmount.isNotBlank() && currentUser != null) {
             val amount = totalAmount.toDoubleOrNull() ?: 0.0
@@ -85,10 +84,10 @@ fun AddExpenseUi(
             val currentUserId = currentUser!!.currentUserId
 
             val newSplits = when (twoPersonSplitType) {
-                "1" -> listOf(SplitDto(owedByUserId = friendId, owedAmount = amount / 2, owedToUserId = currentUserId))
-                "2" -> listOf(SplitDto(owedByUserId = friendId, owedAmount = amount, owedToUserId = currentUserId))
-                "3" -> listOf(SplitDto(owedByUserId = currentUserId, owedAmount = amount / 2, owedToUserId = friendId))
-                "4" -> listOf(SplitDto(owedByUserId = currentUserId, owedAmount = amount, owedToUserId = friendId))
+                "1" -> listOf(com.example.splitwiseclone.rest_api.SplitDto(owedByUserId = friendId, owedAmount = amount / 2, owedToUserId = currentUserId))
+                "2" -> listOf(com.example.splitwiseclone.rest_api.SplitDto(owedByUserId = friendId, owedAmount = amount, owedToUserId = currentUserId))
+                "3" -> listOf(com.example.splitwiseclone.rest_api.SplitDto(owedByUserId = currentUserId, owedAmount = amount / 2, owedToUserId = friendId))
+                "4" -> listOf(com.example.splitwiseclone.rest_api.SplitDto(owedByUserId = currentUserId, owedAmount = amount, owedToUserId = friendId))
                 else -> emptyList()
             }
             val newPaidBy = if (twoPersonSplitType in listOf("3", "4")) listOf(friendId) else listOf(currentUserId)
@@ -105,11 +104,16 @@ fun AddExpenseUi(
                 actions = {
                     TextButton(onClick = {
                         if (currentUser != null && totalAmount.isNotBlank() && description.isNotBlank()) {
+                            val finalSplitType = when {
+                                participants.size > 2 -> "CUSTOM"
+                                twoPersonSplitType != "1" -> "CUSTOM"
+                                else -> "EQUAL"
+                            }
                             expenseApiViewModel.addExpense(
                                 groupId = selectedGroupId,
                                 createdByUserId = currentUser!!.currentUserId, totalExpense = totalAmount.toDouble(),
                                 description = description, expenseDate = date, currencyCode = "USD",
-                                splitType = if (participants.size > 2) "CUSTOM" else "EQUAL",
+                                splitType = finalSplitType,
                                 splits = splits, paidByUserIds = paidByUserIds, participants = participants,
                                 onSuccess = { newExpense ->
                                     expenseRoomViewModel.insertExpense(
@@ -122,6 +126,7 @@ fun AddExpenseUi(
                                         ),
                                         onSuccess = {
                                             addExpenseViewModel.resetState()
+                                            twoPersonExpenseViewModel.selectSplit("1")
                                             navController.navigate("dashboard") { popUpTo("dashboard") { inclusive = true } }
                                         }
                                     )
@@ -148,8 +153,9 @@ fun AddExpenseUi(
                     ParticipantSelector(
                         allFriends = allFriends, allGroups = allGroups,
                         participants = participants, selectedGroupId = selectedGroupId,
+                        currentUser = currentUser,
                         onFriendSelected = { friendId -> addExpenseViewModel.toggleFriendSelection(friendId) },
-                        onGroupSelected = { group -> addExpenseViewModel.selectGroup(group) }
+                        onGroupSelected = { group, userId -> addExpenseViewModel.selectGroup(group, userId) }
                     )
                     DatePickerField(date = date, onDateSelected = { addExpenseViewModel.storeDate(it) })
                 }
@@ -174,7 +180,8 @@ fun AddExpenseUi(
 fun ParticipantSelector(
     allFriends: List<Friend>, allGroups: List<Group>,
     participants: List<String>, selectedGroupId: String?,
-    onFriendSelected: (String) -> Unit, onGroupSelected: (Group) -> Unit
+    currentUser: CurrentUser?,
+    onFriendSelected: (String) -> Unit, onGroupSelected: (Group, String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
@@ -202,7 +209,11 @@ fun ParticipantSelector(
                             SelectableRow(
                                 name = group.groupName ?: "Group", imageUrl = group.profilePicture,
                                 isSelected = group.id == selectedGroupId,
-                                onSelect = { onGroupSelected(group) }
+                                onSelect = {
+                                    currentUser?.let { user ->
+                                        onGroupSelected(group, user.currentUserId)
+                                    }
+                                }
                             )
                         }
                         items(filteredFriends) { friend ->
@@ -232,11 +243,14 @@ fun SelectableRow(name: String, imageUrl: String, isSelected: Boolean, onSelect:
 @Composable
 fun ActionButtons(
     navController: NavHostController, addExpenseViewModel: AddExpenseViewModel,
-    twoPersonExpenseViewModel: TwoPersonExpenseViewModel, paidByViewModel: PaidByViewModel,
+    twoPersonExpenseViewModel: TwoPersonExpenseViewModel, // FIX: Added this parameter
+    paidByViewModel: PaidByViewModel,
     splitOptionsViewModel: SplitOptionsViewModel, allFriends: List<Friend>, currentUser: CurrentUser?
 ) {
     val participants by addExpenseViewModel.participants.collectAsState()
     val totalAmount by addExpenseViewModel.totalAmount.collectAsState()
+
+    // FIX: Get the text state from the correct ViewModels
     val twoPersonSplitText by twoPersonExpenseViewModel.selectedSplitText.collectAsState()
     val paidByText by addExpenseViewModel.paidByText.collectAsState()
     val splitText by addExpenseViewModel.splitText.collectAsState()
@@ -247,7 +261,6 @@ fun ActionButtons(
                 onClick = {
                     val friendId = participants.find { it != currentUser?.currentUserId }
                     if (friendId != null) {
-                        // FIX: Pass the friendId as a required argument in the route
                         navController.navigate("twoPersonExpenseUi/$friendId")
                     }
                 },
@@ -305,7 +318,8 @@ fun DatePickerField(date: String, onDateSelected: (String) -> Unit) {
     }
 
     OutlinedTextField(
-        value = date.ifEmpty { "Select a date" }, onValueChange = {},
+        value = date,
+        onValueChange = {},
         modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
         label = { Text("Date") },
         trailingIcon = { Icon(Icons.Default.DateRange, "Select date") },
@@ -314,7 +328,7 @@ fun DatePickerField(date: String, onDateSelected: (String) -> Unit) {
 }
 
 private fun convertMillisToDate(millis: Long): String {
-    val formatter = SimpleDateFormat("MM/dd/yyyy", Locale.US)
+    val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     formatter.timeZone = TimeZone.getTimeZone("UTC")
     return formatter.format(Date(millis))
 }

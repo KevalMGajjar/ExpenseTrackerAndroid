@@ -26,7 +26,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import com.example.splitwiseclone.roomdb.expense.Expense
+import com.example.splitwiseclone.roomdb.entities.Expense
 import com.example.splitwiseclone.roomdb.expense.ExpenseRoomViewModel
 import java.text.SimpleDateFormat
 import java.util.Date

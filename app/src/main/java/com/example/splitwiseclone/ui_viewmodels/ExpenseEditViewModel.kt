@@ -8,9 +8,9 @@ import com.example.splitwiseclone.rest_api.RequestSplitDto
 import com.example.splitwiseclone.rest_api.RestApiService
 import com.example.splitwiseclone.rest_api.SplitDto
 import com.example.splitwiseclone.rest_api.UpdateExpenseRequest
-import com.example.splitwiseclone.roomdb.expense.Expense
+import com.example.splitwiseclone.roomdb.entities.Expense
 import com.example.splitwiseclone.roomdb.expense.ExpenseRepository
-import com.example.splitwiseclone.roomdb.expense.Splits
+import com.example.splitwiseclone.roomdb.entities.Splits
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

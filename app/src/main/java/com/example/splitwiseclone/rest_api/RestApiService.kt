@@ -1,15 +1,17 @@
 package com.example.splitwiseclone.rest_api
 
 import com.example.splitwiseclone.rest_api.security.RequiresAuth
-import com.example.splitwiseclone.roomdb.expense.Expense
-import com.example.splitwiseclone.roomdb.friends.Friend
-import com.example.splitwiseclone.roomdb.groups.Member
+import com.example.splitwiseclone.roomdb.entities.CurrentUser
+import com.example.splitwiseclone.roomdb.entities.Friend
+import com.example.splitwiseclone.roomdb.entities.Member
+import com.squareup.moshi.Json
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 import java.math.BigDecimal
 
 data class TokenResponse(val accessToken: String, val refreshToken: String)
@@ -202,6 +204,23 @@ data class RequestSplitDto(
     val owedToUserId: String
 )
 
+data class SettleUpRequest(
+    val payerId: String,
+    val receiverId: String,
+    val amount: Double
+)
+
+
+data class UserDto(
+    @field:Json(name = "userId") val userId: String,
+    @field:Json(name = "username") val username: String,
+    @field:Json(name = "email") val email: String,
+    @field:Json(name = "profilePicUrl") val profilePicture: String?,
+    @field:Json(name = "phoneNumber") val phoneNumber: String?,
+    @field:Json(name = "defaultCurrencyCode") val defaultCurrencyCode: String?,
+    @field:Json(name = "hashedPassword") val hashedPassword: String?
+)
+
 interface RestApiService {
 
     @POST("auth/register")
@@ -224,25 +243,35 @@ interface RestApiService {
     @RequiresAuth
     suspend fun getAllFriends(@Body request: GetAllFriendsRequest): List<Friend>
 
-    @DELETE("friends/delete")
-    @RequiresAuth
-    suspend fun deleteFriend(@Body request: DeleteFriendRequest)
+    @DELETE("friends/delete") // The URL must match your server's endpoint
+    suspend fun deleteFriend(
+        @Query("currentUserId") currentUserId: String,
+        @Query("friendId") friendId: String
+    ): Unit // It should return Unit
 
     @POST("friends/updateBalance")
     @RequiresAuth
     suspend fun updateFriendBalance(@Body request: UpdateFriendBalance)
 
-    @POST("user/update")
-    @RequiresAuth
-    suspend fun updateCurrentUser(@Body request: UpdateUserRequest)
+    @POST("user/update") // Assuming "/user" is your base path
+    suspend fun updateCurrentUser(@Body updateUserRequest: UpdateUserRequest): UserDto
 
     @POST("/group/add")
     @RequiresAuth
     suspend fun addGroup(@Body request: SaveGroupRequest): GroupAddResponse
 
-    @DELETE("/group/delete")
-    @RequiresAuth
-    suspend fun deleteGroup(@Body request: DeleteGroupRequest)
+    @DELETE("group/delete/{groupId}")
+    suspend fun deleteGroup(
+        @Path("groupId") groupId: String,
+        @Query("currentUserId") currentUserId: String
+    ): Response<Unit>
+
+    // FIX: Send groupId in the path and memberIds as a list of query parameters
+    @DELETE("group/deleteMembers/{groupId}")
+    suspend fun deleteMembers(
+        @Path("groupId") groupId: String,
+        @Query("memberIds") memberIds: List<String>
+    ): Response<Unit>
 
     @POST("/group/update")
     @RequiresAuth
@@ -251,11 +280,6 @@ interface RestApiService {
     @POST("/group/addMembers")
     @RequiresAuth
     suspend fun addMembers(@Body request: AddMemberRequest)
-
-    @POST("/group/deleteMembers")
-    @RequiresAuth
-    suspend fun deleteMembers(@Body request: DeleteGroupMembers)
-
     @POST("/group/getAll")
     @RequiresAuth
     suspend fun getAllGroups(@Body request: GetAllGroupsRequest): List<GetAllGroupsResponse>
@@ -273,4 +297,10 @@ interface RestApiService {
 
     @DELETE("/expense/delete/{id}")
     suspend fun deleteExpense(@Path("id") expenseId: String): Response<Void>
+
+    @POST("friends/settle") // The endpoint URL must match your controller
+    suspend fun settleUp(@Body request: SettleUpRequest): Response<Unit>
+
+    @DELETE("user/delete/{userId}")
+    suspend fun deleteUserAccount(@Path("userId") userId: String): Response<Unit>
 }

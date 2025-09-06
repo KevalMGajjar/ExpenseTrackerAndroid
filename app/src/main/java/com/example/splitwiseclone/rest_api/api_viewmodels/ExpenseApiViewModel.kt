@@ -7,13 +7,9 @@ import com.example.splitwiseclone.central.ApiClient
 import com.example.splitwiseclone.central.SyncRepository
 import com.example.splitwiseclone.rest_api.AddExpenseRequest
 import com.example.splitwiseclone.rest_api.ExpenseResponse
-import com.example.splitwiseclone.rest_api.GetAllExpenseRequest
 import com.example.splitwiseclone.rest_api.RestApiService
 import com.example.splitwiseclone.rest_api.SplitDto
 import com.example.splitwiseclone.rest_api.UpdateFriendBalance
-import com.example.splitwiseclone.roomdb.expense.Expense
-import com.example.splitwiseclone.roomdb.expense.ExpenseRepository
-import com.example.splitwiseclone.roomdb.expense.Splits
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject

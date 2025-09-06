@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.splitwiseclone.rest_api.api_viewmodels.GroupApiViewModel
-import com.example.splitwiseclone.roomdb.groups.Group
+import com.example.splitwiseclone.roomdb.entities.Group
 import com.example.splitwiseclone.roomdb.groups.GroupRoomViewModel
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
 import com.example.splitwiseclone.ui_viewmodels.AddGroupMemberViewModel

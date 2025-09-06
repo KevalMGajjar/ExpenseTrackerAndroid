@@ -1,11 +1,11 @@
-package com.example.splitwiseclone.roomdb.expense
+package com.example.splitwiseclone.roomdb.converters
 
 import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
+import com.example.splitwiseclone.roomdb.entities.Splits
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import javax.inject.Inject
-import kotlin.jvm.java
 
 @ProvidedTypeConverter
 class ExpenseDbConvertor @Inject constructor(

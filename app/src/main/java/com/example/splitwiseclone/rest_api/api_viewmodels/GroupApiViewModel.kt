@@ -3,20 +3,14 @@ package com.example.splitwiseclone.rest_api.api_viewmodels
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.splitwiseclone.central.ApiClient
 import com.example.splitwiseclone.central.SyncRepository
 import com.example.splitwiseclone.rest_api.AddMemberRequest
-import com.example.splitwiseclone.rest_api.DeleteGroupMembers
-import com.example.splitwiseclone.rest_api.DeleteGroupRequest
-import com.example.splitwiseclone.rest_api.GetAllGroupsRequest
 import com.example.splitwiseclone.rest_api.RestApiService
 import com.example.splitwiseclone.rest_api.SaveGroupRequest
 import com.example.splitwiseclone.rest_api.models.GroupApi
-import com.example.splitwiseclone.roomdb.friends.Friend
-import com.example.splitwiseclone.roomdb.groups.Group
-import com.example.splitwiseclone.roomdb.groups.GroupRepository
-import com.example.splitwiseclone.roomdb.groups.Member
+import com.example.splitwiseclone.roomdb.entities.Friend
+import com.example.splitwiseclone.roomdb.entities.Member
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -24,7 +18,6 @@ import javax.inject.Inject
 @HiltViewModel
 class GroupApiViewModel @Inject constructor(
     private val apiService: RestApiService,
-    private val groupRepository: GroupRepository,
     private val syncRepository: SyncRepository,
     private val apiClient: ApiClient
 ): ViewModel() {
@@ -59,12 +52,6 @@ class GroupApiViewModel @Inject constructor(
         // The immediate return and onSuccess() call are removed from here.
     }
 
-    fun getAllGroups(userId: String?){
-        viewModelScope.launch {
-            apiClient.getAllGroups(userId)
-        }
-    }
-
     fun addMembers(members: List<Friend>, groupId: String, onSuccess: () -> Unit) {
 
         val request = AddMemberRequest(
@@ -92,41 +79,37 @@ class GroupApiViewModel @Inject constructor(
     }
 
     fun deleteGroup(groupId: String, currentUserId: String, onSuccess: () -> Unit) {
-
-        val request = DeleteGroupRequest(
-            groupId = groupId,
-            currentUserId = currentUserId
-        )
-
         viewModelScope.launch {
             try {
-                apiService.deleteGroup(request)
-                syncRepository.syncAllData()
-                onSuccess()
+                // FIX: Call the service with separate arguments
+                val response = apiService.deleteGroup(groupId, currentUserId)
+                if (response.isSuccessful) {
+                    syncRepository.syncAllData()
+                    onSuccess()
+                } else {
+                    Log.e("GroupApiViewModel", "API error deleting group: ${response.code()}")
+                }
             } catch (e: Exception) {
-                Log.e("error", "Error while deleting group", e)
+                Log.e("GroupApiViewModel", "Error while deleting group", e)
             }
         }
-
     }
 
-    fun deleteMembers(groupId: String, membersIds: List<String>, onSuccess: () -> Unit){
-
-        val request = DeleteGroupMembers(
-            groupId = groupId,
-            membersIds = membersIds
-        )
-
+    fun deleteMembers(groupId: String, membersIds: List<String>, onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
-                apiService.deleteMembers(request)
-                syncRepository.syncAllData()
-                onSuccess()
+                // FIX: Call the service with separate arguments
+                val response = apiService.deleteMembers(groupId, membersIds)
+                if (response.isSuccessful) {
+                    syncRepository.syncAllData()
+                    onSuccess()
+                } else {
+                    Log.e("GroupApiViewModel", "API error deleting members: ${response.code()}")
+                }
             } catch (e: Exception) {
-                Log.e("error", "Error while deleting members $membersIds $groupId", e)
+                Log.e("GroupApiViewModel", "Error while deleting members $membersIds $groupId", e)
             }
         }
-
     }
 
 }

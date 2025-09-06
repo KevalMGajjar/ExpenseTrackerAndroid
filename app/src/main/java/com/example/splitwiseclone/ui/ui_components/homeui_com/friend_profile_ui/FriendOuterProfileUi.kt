@@ -37,7 +37,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -51,10 +50,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.splitwiseclone.roomdb.expense.Expense
-import com.example.splitwiseclone.roomdb.friends.Friend
+import com.example.splitwiseclone.roomdb.entities.Expense
+import com.example.splitwiseclone.roomdb.entities.Friend
 import com.example.splitwiseclone.roomdb.expense.ExpenseRoomViewModel
-import com.example.splitwiseclone.roomdb.user.CurrentUser
+import com.example.splitwiseclone.roomdb.entities.CurrentUser
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
 import com.example.splitwiseclone.ui_viewmodels.FriendsUiViewModel
 import java.text.SimpleDateFormat

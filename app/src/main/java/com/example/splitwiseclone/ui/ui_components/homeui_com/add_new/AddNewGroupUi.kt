@@ -13,9 +13,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.splitwiseclone.rest_api.api_viewmodels.GroupApiViewModel
 import com.example.splitwiseclone.rest_api.models.GroupApi
-import com.example.splitwiseclone.roomdb.groups.Group
+import com.example.splitwiseclone.roomdb.entities.Group
 import com.example.splitwiseclone.roomdb.groups.GroupRoomViewModel
-import com.example.splitwiseclone.roomdb.groups.Member
+import com.example.splitwiseclone.roomdb.entities.Member
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

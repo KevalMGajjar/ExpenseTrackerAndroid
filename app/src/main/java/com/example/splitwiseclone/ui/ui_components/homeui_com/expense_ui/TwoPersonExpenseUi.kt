@@ -6,8 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,23 +18,23 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.example.splitwiseclone.roomdb.friends.Friend
+import com.example.splitwiseclone.roomdb.entities.Friend
 import com.example.splitwiseclone.roomdb.friends.FriendsRoomViewModel
 import com.example.splitwiseclone.ui_viewmodels.TwoPersonExpenseViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TwoPersonExpenseUi(
-    navHostController: NavHostController,
-    friendId: String // Receive friendId directly as a parameter
+    navController: NavHostController,
+    friendId: String,
+    // FIX: Receive the parent screen's navigation entry
+    parentEntry: NavBackStackEntry
 ) {
-    // FIX: Get the parent's back stack entry to share the ViewModel instance
-    val parentEntry = remember(navHostController.currentBackStack) {
-        navHostController.getBackStackEntry("addExpense?groupId={groupId}")
-    }
-    // FIX: Scope the ViewModel to the parent entry. This is the key to sharing state.
+    // FIX: Scope the ViewModel to the parent entry. This is the key to sharing the state.
+    // It guarantees that this screen and AddExpenseScreen use the SAME ViewModel instance.
     val twoPersonExpenseViewModel: TwoPersonExpenseViewModel = hiltViewModel(parentEntry)
     val friendsRoomViewModel: FriendsRoomViewModel = hiltViewModel()
 
@@ -53,7 +53,7 @@ fun TwoPersonExpenseUi(
             TopAppBar(
                 title = { Text("Choose split option", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
-                    IconButton(onClick = { navHostController.popBackStack() }) {
+                    IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
                     }
                 }
@@ -85,7 +85,7 @@ fun TwoPersonExpenseUi(
                         onClick = {
                             twoPersonExpenseViewModel.selectSplit(option.id)
                             twoPersonExpenseViewModel.selectSplitText(option.text)
-                            navHostController.popBackStack()
+                            navController.popBackStack()
                         }
                     )
                     HorizontalDivider()
@@ -131,7 +131,7 @@ private fun SplitOptionRow(text: String, isSelected: Boolean, onClick: () -> Uni
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Default.Build,
+            imageVector = Icons.Default.PlayArrow, // Changed for better visual
             contentDescription = "Split Option",
             tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
         )

@@ -1,7 +1,7 @@
 package com.example.splitwiseclone.ui_viewmodels
 
 import androidx.lifecycle.ViewModel
-import com.example.splitwiseclone.roomdb.friends.Friend
+import com.example.splitwiseclone.roomdb.entities.Friend
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

@@ -22,14 +22,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.splitwiseclone.rest_api.api_viewmodels.GroupApiViewModel
-import com.example.splitwiseclone.roomdb.groups.Group
+import com.example.splitwiseclone.roomdb.entities.Group
 import com.example.splitwiseclone.roomdb.groups.GroupRoomViewModel
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
 import com.example.splitwiseclone.ui_viewmodels.GroupProfileViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun GroupSettingsUi(
+fun GroupSettingsUi( // Renamed for clarity and consistency
     navController: NavHostController,
     groupProfileViewModel: GroupProfileViewModel = hiltViewModel(),
     groupApiViewModel: GroupApiViewModel = hiltViewModel(),
@@ -37,16 +37,11 @@ fun GroupSettingsUi(
     currentUserViewModel: CurrentUserViewModel = hiltViewModel()
 ) {
     val currentUser by currentUserViewModel.currentUser.collectAsState()
-    // Assuming you get the full UI state from GroupProfileViewModel
-    val uiState by produceState<com.example.splitwiseclone.ui_viewmodels.GroupProfileUiState?>(initialValue = null, currentUser) {
-        currentUser?.let { user ->
-            groupProfileViewModel.getUiState(user).collect { state ->
-                value = state
-            }
-        }
-    }
+    // FIX: Directly collect the public uiState from the ViewModel.
+    // The produceState block is no longer needed.
+    val uiState by groupProfileViewModel.uiState.collectAsState()
 
-    val group = uiState?.group
+    val group = uiState.group
     var showConfirmationDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -61,7 +56,11 @@ fun GroupSettingsUi(
             )
         }
     ) { padding ->
-        if (group != null && currentUser != null) {
+        if (uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (group != null && currentUser != null) {
             val isUserAdmin = group.groupCreatedByUserId == currentUser!!.currentUserId
 
             Column(
@@ -98,6 +97,7 @@ fun GroupSettingsUi(
                     group = group,
                     onDismiss = { showConfirmationDialog = false },
                     onConfirm = {
+                        showConfirmationDialog = false
                         if (isUserAdmin) {
                             groupApiViewModel.deleteGroup(
                                 group.id, currentUser!!.currentUserId,
@@ -111,18 +111,14 @@ fun GroupSettingsUi(
                             groupApiViewModel.deleteMembers(
                                 group.id, listOf(currentUser!!.currentUserId),
                                 onSuccess = {
-                                    // Note: The user just leaves, the group itself is not deleted from local DB
-                                    navController.navigate("groupsUi") { popUpTo("groupsUi") { inclusive = true } }
+                                    groupRoomViewModel.deleteGroup(group) {
+                                        navController.navigate("groupsUi") { popUpTo("groupsUi") { inclusive = true } }
+                                    }
                                 }
                             )
                         }
-                        showConfirmationDialog = false
                     }
                 )
-            }
-        } else {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
             }
         }
     }

@@ -3,7 +3,6 @@ package com.example.splitwiseclone.ui.ui_components.homeui_com.expense_ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,16 +17,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.example.splitwiseclone.ui_viewmodels.ExpenseDetailUiState
+import com.example.splitwiseclone.roomdb.entities.Expense
 import com.example.splitwiseclone.ui_viewmodels.ExpenseDetailViewModel
 import com.example.splitwiseclone.ui_viewmodels.ParticipantDetails
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,7 +92,7 @@ fun ExpenseDetailUi(
 }
 
 @Composable
-fun ExpenseHeader(expense: com.example.splitwiseclone.roomdb.expense.Expense, userMap: Map<String, ParticipantDetails>) {
+fun ExpenseHeader(expense: Expense, userMap: Map<String, ParticipantDetails>) {
     val creatorName = userMap[expense.createdById]?.name ?: "Someone"
     val formattedDate = expense.expenseDate.toDate()?.toFormattedString() ?: expense.expenseDate
 
@@ -122,7 +119,7 @@ fun ExpenseHeader(expense: com.example.splitwiseclone.roomdb.expense.Expense, us
 }
 
 @Composable
-fun PaidBySection(expense: com.example.splitwiseclone.roomdb.expense.Expense, userMap: Map<String, ParticipantDetails>) {
+fun PaidBySection(expense: Expense, userMap: Map<String, ParticipantDetails>) {
     Card {
         Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
             Text("Paid by", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -141,7 +138,7 @@ fun PaidBySection(expense: com.example.splitwiseclone.roomdb.expense.Expense, us
 }
 
 @Composable
-fun SplitDetailsSection(expense: com.example.splitwiseclone.roomdb.expense.Expense, userMap: Map<String, ParticipantDetails>) {
+fun SplitDetailsSection(expense: Expense, userMap: Map<String, ParticipantDetails>) {
     Card {
         Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
             Text("Split details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)

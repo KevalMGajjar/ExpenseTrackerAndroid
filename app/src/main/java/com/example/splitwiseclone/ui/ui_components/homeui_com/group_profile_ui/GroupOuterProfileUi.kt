@@ -26,8 +26,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
-import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
-import com.example.splitwiseclone.ui_viewmodels.GroupProfileUiState
+import com.example.splitwiseclone.roomdb.entities.Group
 import com.example.splitwiseclone.ui_viewmodels.GroupProfileViewModel
 import com.example.splitwiseclone.ui_viewmodels.MemberBalance
 import java.util.*
@@ -42,39 +41,35 @@ val TextNegative = Color(0xFFD32F2F)
 @Composable
 fun GroupOuterProfileUi(
     navController: NavHostController,
-    groupProfileViewModel: GroupProfileViewModel = hiltViewModel(),
-    currentUserViewModel: CurrentUserViewModel = hiltViewModel()
+    groupProfileViewModel: GroupProfileViewModel = hiltViewModel()
 ) {
-    val currentUser by currentUserViewModel.currentUser.collectAsState()
-    val uiState by produceState<GroupProfileUiState?>(initialValue = null, currentUser) {
-        currentUser?.let { user ->
-            groupProfileViewModel.getUiState(user).collect { state ->
-                value = state
-            }
-        }
-    }
+    // FIX: Directly collect the public uiState from the ViewModel.
+    // This creates a permanent subscription. Whenever the underlying expense data
+    // changes, the ViewModel will emit a new state, and this composable will
+    // automatically recompose with the fresh data.
+    val uiState by groupProfileViewModel.uiState.collectAsState()
 
     var showSettleUpDialog by remember { mutableStateOf(false) }
 
-    if (uiState == null || uiState?.isLoading == true) {
+    if (uiState.isLoading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
     } else {
-        uiState?.group?.let { group ->
+        uiState.group?.let { group ->
             Column(modifier = Modifier.fillMaxSize()) {
-                GroupProfileHeader(navController, group, uiState!!.userBalanceInGroup)
+                GroupProfileHeader(navController, group, uiState.userBalanceInGroup)
                 GroupActionButtons(
                     navController = navController,
                     groupId = group.id,
                     onSettleUpClick = { showSettleUpDialog = true }
                 )
-                MemberList(memberBalances = uiState!!.memberBalances)
+                MemberList(memberBalances = uiState.memberBalances)
             }
 
             if (showSettleUpDialog) {
                 SettleUpMemberDialog(
-                    memberBalances = uiState!!.memberBalances.filter { abs(it.balanceWithCurrentUser) > 0.01 },
+                    memberBalances = uiState.memberBalances.filter { abs(it.balanceWithCurrentUser) > 0.01 },
                     onDismiss = { showSettleUpDialog = false },
                     onMemberSelected = { friendId ->
                         showSettleUpDialog = false
@@ -87,7 +82,7 @@ fun GroupOuterProfileUi(
 }
 
 @Composable
-fun GroupProfileHeader(navController: NavHostController, group: com.example.splitwiseclone.roomdb.groups.Group, userBalance: Double) {
+fun GroupProfileHeader(navController: NavHostController, group: Group, userBalance: Double) {
     Surface(color = HeaderBlue, modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(16.dp).padding(top = 24.dp),
@@ -125,7 +120,7 @@ fun GroupActionButtons(navController: NavHostController, groupId: String, onSett
             navController.navigate("addExpense?groupId=$groupId")
         }
         ActionButton(icon = Icons.Default.Add, text = "Settle up", onClick = onSettleUpClick)
-        ActionButton(icon = Icons.Default.Person, text = "Add members") { navController.navigate("addNewGroupMemberUi/$groupId") }
+        ActionButton(icon = Icons.Default.Add, text = "Add members") { navController.navigate("addNewGroupMemberUi/$groupId") }
     }
 }
 
@@ -198,21 +193,33 @@ fun SettleUpMemberDialog(
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Settle with...", style = MaterialTheme.typography.titleLarge)
                 Spacer(modifier = Modifier.height(16.dp))
-                // FIX: Added a heightIn modifier to ensure the LazyColumn has space to render its items.
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp), // Give the list a maximum height
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    items(memberBalances) { member ->
-                        MemberListItem(
-                            member = member,
-                            modifier = Modifier.clickable { onMemberSelected(member.memberId) }
+
+                if (memberBalances.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No outstanding balances to settle.",
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
                         )
-                        HorizontalDivider()
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(memberBalances) { member ->
+                            MemberListItem(
+                                member = member,
+                                modifier = Modifier.clickable { onMemberSelected(member.memberId) }
+                            )
+                            HorizontalDivider()
+                        }
                     }
                 }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -226,7 +233,6 @@ fun SettleUpMemberDialog(
     }
 }
 
-// Overloaded MemberListItem for use inside the dialog
 @Composable
 fun MemberListItem(member: MemberBalance, modifier: Modifier = Modifier) {
     Row(
@@ -240,8 +246,6 @@ fun MemberListItem(member: MemberBalance, modifier: Modifier = Modifier) {
     }
 }
 
-
-// --- Utility Function ---
 private fun formatBalance(amount: Double, withSign: Boolean = true): String {
     val amountAbs = abs(amount)
     val sign = when {
@@ -251,4 +255,3 @@ private fun formatBalance(amount: Double, withSign: Boolean = true): String {
     }
     return String.format(Locale.US, "%s$%.2f", sign, amountAbs)
 }
-

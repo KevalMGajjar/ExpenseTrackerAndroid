@@ -5,15 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.splitwiseclone.central.ApiClient
 import com.example.splitwiseclone.central.SyncRepository
-import com.example.splitwiseclone.rest_api.AddFriendResponse
 import com.example.splitwiseclone.rest_api.AddFriendsRequest
-import com.example.splitwiseclone.rest_api.DeleteFriendRequest
-import com.example.splitwiseclone.rest_api.GetAllFriendsRequest
 import com.example.splitwiseclone.rest_api.RestApiService
-import com.example.splitwiseclone.rest_api.UpdateFriendBalance
-import com.example.splitwiseclone.roomdb.friends.Friend
+import com.example.splitwiseclone.roomdb.entities.Friend
 import com.example.splitwiseclone.roomdb.friends.FriendRepository
-import com.example.splitwiseclone.roomdb.user.CurrentUser
+import com.example.splitwiseclone.roomdb.entities.CurrentUser
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -79,25 +75,4 @@ class FriendApiViewModel @Inject constructor(
     }
 
 
-    fun getAllFriends(id: String?) {
-        viewModelScope.launch {
-            apiClient.getAllFriends(id)
-        }
-    }
-
-    fun deleteFriend(currentUserId: String, friendId: String, onSuccess: () -> Unit){
-        val request = DeleteFriendRequest(
-            currentUserId,
-            friendId
-        )
-        viewModelScope.launch {
-            try {
-                apiService.deleteFriend(request)
-                syncRepository.syncAllData()
-                onSuccess()
-            } catch (e: Exception) {
-                Log.e("Error in deleting Friend", "error", e)
-            }
-        }
-    }
 }

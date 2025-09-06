@@ -1,4 +1,4 @@
-package com.example.splitwiseclone.roomdb.friends
+package com.example.splitwiseclone.roomdb.entities
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

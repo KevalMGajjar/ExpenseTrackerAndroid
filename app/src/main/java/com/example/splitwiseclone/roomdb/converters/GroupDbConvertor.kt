@@ -1,7 +1,8 @@
-package com.example.splitwiseclone.roomdb.groups
+package com.example.splitwiseclone.roomdb.converters
 
 import androidx.room.ProvidedTypeConverter
 import androidx.room.TypeConverter
+import com.example.splitwiseclone.roomdb.entities.Member
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import javax.inject.Inject

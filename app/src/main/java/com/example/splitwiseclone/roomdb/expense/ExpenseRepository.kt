@@ -1,5 +1,7 @@
 package com.example.splitwiseclone.roomdb.expense
 
+import com.example.splitwiseclone.roomdb.dao.ExpenseDao
+import com.example.splitwiseclone.roomdb.entities.Expense
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

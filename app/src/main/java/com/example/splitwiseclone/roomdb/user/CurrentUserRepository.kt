@@ -1,6 +1,7 @@
 package com.example.splitwiseclone.roomdb.user
 
-import com.example.splitwiseclone.roomdb.friends.Friend
+import com.example.splitwiseclone.roomdb.dao.CurrentUserDao
+import com.example.splitwiseclone.roomdb.entities.CurrentUser
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 

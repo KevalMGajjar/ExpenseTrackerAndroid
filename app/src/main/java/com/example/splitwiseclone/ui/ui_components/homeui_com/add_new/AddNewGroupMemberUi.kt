@@ -23,10 +23,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.splitwiseclone.rest_api.api_viewmodels.GroupApiViewModel
-import com.example.splitwiseclone.roomdb.friends.Friend
+import com.example.splitwiseclone.roomdb.entities.Friend
 import com.example.splitwiseclone.roomdb.friends.FriendsRoomViewModel
 import com.example.splitwiseclone.roomdb.groups.GroupRoomViewModel
-import com.example.splitwiseclone.roomdb.groups.Member
+import com.example.splitwiseclone.roomdb.entities.Member
 import com.example.splitwiseclone.ui_viewmodels.AddGroupMemberViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)

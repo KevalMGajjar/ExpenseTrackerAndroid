@@ -39,8 +39,9 @@ import com.example.splitwiseclone.roomdb.groups.GroupRoomViewModel
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
 import com.example.splitwiseclone.ui.theme.SplitWiseCloneTheme
 import com.example.splitwiseclone.ui.ui_components.AddExpenseUi
-import com.example.splitwiseclone.ui.ui_components.AddPhoneNumberUi
-import com.example.splitwiseclone.ui.ui_components.DashBoardUi
+import com.example.splitwiseclone.ui.ui_components.AddPhoneNumberScreen
+import com.example.splitwiseclone.ui.ui_components.homeui_com.DashBoardUi
+import com.example.splitwiseclone.ui.ui_components.EditProfileUi
 import com.example.splitwiseclone.ui.ui_components.LoginUi
 import com.example.splitwiseclone.ui.ui_components.ProfileUi
 import com.example.splitwiseclone.ui.ui_components.SignUpUi
@@ -66,9 +67,6 @@ import com.example.splitwiseclone.ui.ui_components.homeui_com.friend_profile_ui.
 import com.example.splitwiseclone.ui_viewmodels.AddExpenseViewModel
 import com.example.splitwiseclone.ui_viewmodels.AddFriendViewModel
 import com.example.splitwiseclone.ui_viewmodels.AddGroupMemberViewModel
-import com.example.splitwiseclone.ui_viewmodels.AddPhoneNumberViewModel
-import com.example.splitwiseclone.ui_viewmodels.ExpenseDetailViewModel
-import com.example.splitwiseclone.ui_viewmodels.ExpenseEditViewModel
 import com.example.splitwiseclone.ui_viewmodels.FriendsUiViewModel
 import com.example.splitwiseclone.ui_viewmodels.GroupViewModel
 import com.example.splitwiseclone.ui_viewmodels.LoginViewModel
@@ -107,7 +105,6 @@ fun MainUi(navHostController: NavHostController) {
     val groupApiViewModel: GroupApiViewModel = viewModel()
     val splashScreenViewModel: SplashScreenViewModel = viewModel()
     val addGroupMemberViewModel: AddGroupMemberViewModel = viewModel()
-    val addPhoneNumberViewModel: AddPhoneNumberViewModel = viewModel()
     val addFriendViewModel: AddFriendViewModel = viewModel()
     val groupViewModel: GroupViewModel = viewModel()
     val expenseRoomViewModel: ExpenseRoomViewModel = viewModel()
@@ -116,8 +113,7 @@ fun MainUi(navHostController: NavHostController) {
     val syncViewModel: SyncViewModel = viewModel()
     val paidByViewModel: PaidByViewModel = viewModel()
     val splitOptionsViewModel: SplitOptionsViewModel = viewModel()
-    val expenseEditViewModel: ExpenseEditViewModel = viewModel()
-    val expenseDetailViewModel: ExpenseDetailViewModel = viewModel()
+
 
     Scaffold(
         bottomBar = {
@@ -206,7 +202,7 @@ fun MainUi(navHostController: NavHostController) {
                 ProfileUi(navHostController, currentUserViewModel)
             }
             composable("splash") {
-                SplashScreen(navHostController, splashScreenViewModel, currentUserViewModel, syncViewModel)
+                SplashScreen(navHostController)
             }
             composable(
                 // Define the route with a *required* groupId argument
@@ -216,9 +212,6 @@ fun MainUi(navHostController: NavHostController) {
                 AddNewGroupMemberUi(
                     navHostController = navHostController
                 )
-            }
-            composable("addPhoneNumberUi") {
-                AddPhoneNumberUi(navHostController, addPhoneNumberViewModel, userApiViewModel, currentUserViewModel)
             }
             composable("friendSettingsUi/{friendId}") {
                 FriendSettingsUi(navHostController)
@@ -233,14 +226,21 @@ fun MainUi(navHostController: NavHostController) {
                 route = "twoPersonExpenseUi/{friendId}",
                 arguments = listOf(navArgument("friendId") { type = NavType.StringType })
             ) { backStackEntry ->
-                // Extract the friendId from the route arguments
+                // Extract the friendId from the current route's arguments
                 val friendId = backStackEntry.arguments?.getString("friendId")
+                requireNotNull(friendId) { "Friend ID cannot be null for this screen." }
 
-                // Ensure the ID is not null, and pass it to the composable
-                requireNotNull(friendId) { "Friend ID is required for this screen." }
+                // FIX: Get the back stack entry for the parent screen ("addExpense").
+                // This is the key that allows us to share the ViewModel instance.
+                val parentEntry = remember(backStackEntry) {
+                    navHostController.getBackStackEntry("addExpense?groupId={groupId}")
+                }
+
+                // Pass both the navController, the friendId, and the parent's entry to the UI.
                 TwoPersonExpenseUi(
-                    navHostController = navHostController,
-                    friendId = friendId
+                    navController = navHostController,
+                    friendId = friendId,
+                    parentEntry = parentEntry
                 )
             }
             composable("customPBUUi") {
@@ -285,6 +285,12 @@ fun MainUi(navHostController: NavHostController) {
                 arguments = listOf(navArgument("friendId") { type = NavType.StringType })
             ) {
                 SettleUpScreen(navController = navHostController)
+            }
+            composable("editProfile") {
+                EditProfileUi(navController = navHostController)
+            }
+            composable("addPhoneNumberUi") {
+                AddPhoneNumberScreen(navController = navHostController)
             }
         }
     }

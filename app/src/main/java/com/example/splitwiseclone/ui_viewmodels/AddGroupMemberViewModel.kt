@@ -3,8 +3,8 @@ package com.example.splitwiseclone.ui_viewmodels
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.splitwiseclone.roomdb.friends.Friend
-import com.example.splitwiseclone.roomdb.groups.Group
+import com.example.splitwiseclone.roomdb.entities.Friend
+import com.example.splitwiseclone.roomdb.entities.Group
 import com.example.splitwiseclone.roomdb.groups.GroupRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow

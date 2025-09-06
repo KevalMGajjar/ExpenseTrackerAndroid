@@ -1,4 +1,4 @@
-package com.example.splitwiseclone.roomdb.friends
+package com.example.splitwiseclone.roomdb.dao
 
 import android.icu.text.MessagePattern
 import androidx.room.Dao
@@ -7,6 +7,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.example.splitwiseclone.roomdb.entities.Friend
 import kotlinx.coroutines.flow.Flow
 
 @Dao

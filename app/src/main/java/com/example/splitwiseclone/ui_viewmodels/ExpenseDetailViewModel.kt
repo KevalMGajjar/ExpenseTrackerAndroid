@@ -5,11 +5,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.splitwiseclone.rest_api.RestApiService // FIX: Import the API service
-import com.example.splitwiseclone.roomdb.expense.Expense
+import com.example.splitwiseclone.roomdb.entities.Expense
 import com.example.splitwiseclone.roomdb.expense.ExpenseRepository
-import com.example.splitwiseclone.roomdb.friends.Friend
+import com.example.splitwiseclone.roomdb.entities.Friend
 import com.example.splitwiseclone.roomdb.friends.FriendRepository
-import com.example.splitwiseclone.roomdb.user.CurrentUser
+import com.example.splitwiseclone.roomdb.entities.CurrentUser
 import com.example.splitwiseclone.roomdb.user.CurrentUserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*

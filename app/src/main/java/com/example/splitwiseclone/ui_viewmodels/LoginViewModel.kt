@@ -5,23 +5,48 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import android.util.Patterns
 
 @HiltViewModel
-class LoginViewModel @Inject constructor(
+class LoginViewModel @Inject constructor() : ViewModel() {
 
-): ViewModel(){
+    private val _email = mutableStateOf("")
+    val email: State<String> = _email
 
-    private var _email = mutableStateOf("")
-    var email: State<String> = _email
+    private val _password = mutableStateOf("")
+    val password: State<String> = _password
 
-    private var _password = mutableStateOf("")
-    var password: State<String> = _password
+    // --- State for Validation Errors ---
+    private val _emailError = mutableStateOf<String?>(null)
+    val emailError: State<String?> = _emailError
 
-    fun storeEmail(email: String) {
-        _email.value = email
+    private val _passwordError = mutableStateOf<String?>(null)
+    val passwordError: State<String?> = _passwordError
+
+    // --- State Update Functions ---
+    fun storeEmail(value: String) {
+        _email.value = value
+        _emailError.value = null // Clear error on change
     }
 
-    fun storePassword(password: String) {
-        _password.value = password
+    fun storePassword(value: String) {
+        _password.value = value
+        _passwordError.value = null // Clear error on change
+    }
+
+    /**
+     * Validates all input fields and returns true if they are valid.
+     * Updates error states for the UI to observe.
+     */
+    fun validateInputs(): Boolean {
+        if (!Patterns.EMAIL_ADDRESS.matcher(_email.value).matches()) {
+            _emailError.value = "Please enter a valid email address"
+            return false
+        }
+        if (_password.value.isBlank()) {
+            _passwordError.value = "Password cannot be empty"
+            return false
+        }
+        return true
     }
 }
