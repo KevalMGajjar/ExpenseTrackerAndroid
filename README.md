@@ -1,11 +1,5 @@
 # Expense Tracker 💸
 
-<p align="center">
-  <img src="assets/WhatsApp Image 2025-09-08 at 20.50.54_40d45f45.jpg" width="200" alt="Dashboard" />
-  <img src="assets/WhatsApp Image 2025-09-08 at 20.50.53_d07d34f3.jpg" width="200" alt="Login Screen" />
-  <img src="assets/WhatsApp Image 2025-09-08 at 20.50.51_456d8cd8.jpg" width="200" alt="Group Expense" />
-</p>
-
 A modern, native Android expense tracker built with **100% Kotlin** and **Jetpack Compose**. This app provides a seamless experience for managing personal finances, tracking group expenses, and splitting bills with friends, all powered by a robust Spring Boot backend.
 
 ---
@@ -15,10 +9,10 @@ A modern, native Android expense tracker built with **100% Kotlin** and **Jetpac
 | Feature | Description | Screenshot |
 | :--- | :--- | :--- |
 | **Google Sign-In** | Secure and easy authentication using your Google account. | <img src="assets/WhatsApp Image 2025-09-08 at 20.50.53_d07d34f3.jpg" width="200" alt="Login with Google"/> |
-| **Effortless Expense Logging** | Quickly record what you spend, who you're with, and how it's split with a clean, intuitive UI. | <img src="assets/WhatsApp Image 2025-09-08 at 20.50.52_c3fe0eb7.jpg" width="200" alt="Add Expense"/> |
-| **Settle Up with Friends** | Easily track who owes whom and settle balances in a tap. | <img src="assets/WhatsApp Image 2025-09-08 at 20.50.51_4fa3fb2e.jpg" width="200" alt="Settle Up"/> |
-| **Group Spending Made Easy** | Manage shared expenses in groups. Add members and track spending all in one place. | <img src="assets/WhatsApp Image 2025-09-08 at 20.50.51_456d8cd8.jpg" width="200" alt="Group Details"/> |
-| **Clean Dashboard** | Get a quick overview of your total balance and recent activities at a glance. | <img src="assets/WhatsApp Image 2025-09-08 at 20.50.54_40d45f45.jpg" width="200" alt="Dashboard View"/> |
+| **Effortless Expense Logging** | Quickly record what you spend, who you're with, and how it's split with a clean, intuitive UI. | <img src="https://github.com/KevalMGajjar/ExpenseTrackerAndroid/blob/KevalMGajjar-ui-photos/expense.jpg" width="200" alt="Add Expense"/> |
+| **Settle Up with Friends** | Easily track who owes whom and settle balances in a tap. | <img src="https://github.com/KevalMGajjar/ExpenseTrackerAndroid/blob/KevalMGajjar-ui-photos/SettleUpUi.jpg" width="200" alt="Settle Up"/> |
+| **Group Spending Made Easy** | Manage shared expenses in groups. Add members and track spending all in one place. | <img src="https://github.com/KevalMGajjar/ExpenseTrackerAndroid/blob/KevalMGajjar-ui-photos/GroupUi.jpg" width="200" alt="Group Details"/> |
+| **Clean Dashboard** | Get a quick overview of your total balance and recent activities at a glance. | <img src="https://github.com/KevalMGajjar/ExpenseTrackerAndroid/blob/KevalMGajjar-ui-photos/DashBoardUi.jpg" width="200" alt="Dashboard View"/> |
 
 ---
 
