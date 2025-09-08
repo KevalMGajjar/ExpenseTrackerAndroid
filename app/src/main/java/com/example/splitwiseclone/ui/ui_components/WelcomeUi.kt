@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.example.splitwiseclone.R // Make sure to create this drawable resource
+import com.example.splitwiseclone.R
 import com.example.splitwiseclone.rest_api.api_viewmodels.UserApiViewModel
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
 import com.example.splitwiseclone.utils.Constants
@@ -36,8 +36,9 @@ import com.google.android.gms.common.api.ApiException
 fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiViewModel = hiltViewModel(), currentUserViewModel: CurrentUserViewModel = hiltViewModel()) {
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(false) }
-    val loginSuccess by userApiViewModel.loginSuccess.collectAsStateWithLifecycle()
-    val currentUser by currentUserViewModel.currentUser.collectAsState()
+    // REMOVED: No longer need to track the loginSuccess flag.
+    // val loginSuccess by userApiViewModel.loginSuccess.collectAsStateWithLifecycle()
+    val currentUser by currentUserViewModel.currentUser.collectAsStateWithLifecycle()
 
     var startAnimation by remember { mutableStateOf(false) }
     val alphaAnim = animateFloatAsState(
@@ -49,9 +50,11 @@ fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiVie
         startAnimation = true
     }
 
-    LaunchedEffect(loginSuccess, currentUser) {
-        if (loginSuccess && currentUser != null) {
-            if (currentUser?.phoneNumber.isNullOrBlank()) {
+    // CORRECTED: This effect now only depends on currentUser, the single source of truth.
+    LaunchedEffect(currentUser) {
+        // If currentUser changes from null to a real user, it means login was successful.
+        currentUser?.let { user ->
+            if (user.phoneNumber.isNullOrBlank()) {
                 navHostController.navigate("addPhoneNumberUi") {
                     popUpTo("welcome") { inclusive = true }
                 }
@@ -60,7 +63,6 @@ fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiVie
                     popUpTo("welcome") { inclusive = true }
                 }
             }
-            userApiViewModel.resetLoginStatus()
         }
     }
 
@@ -87,6 +89,7 @@ fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiVie
                 val credential = oneTapClient.getSignInCredentialFromIntent(result.data)
                 val idToken = credential.googleIdToken
                 if (idToken != null) {
+                    // This call will update the database, which in turn updates our currentUser state.
                     userApiViewModel.loginWithGoogle(idToken)
                 } else {
                     Log.e("WelcomeUi", "Google ID Token was null.")
@@ -99,7 +102,7 @@ fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiVie
         }
     }
 
-    // --- UI ---
+    // --- UI (No changes needed below this line) ---
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -164,7 +167,7 @@ fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiVie
                     } else {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Image(
-                                painter = painterResource(id = R.drawable.ic_google_logo), // Placeholder - create this drawable
+                                painter = painterResource(id = R.drawable.ic_google_logo),
                                 contentDescription = "Google Logo",
                                 modifier = Modifier.size(24.dp)
                             )
