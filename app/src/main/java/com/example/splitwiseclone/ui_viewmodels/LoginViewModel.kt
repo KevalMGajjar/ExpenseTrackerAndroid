@@ -16,28 +16,22 @@ class LoginViewModel @Inject constructor() : ViewModel() {
     private val _password = mutableStateOf("")
     val password: State<String> = _password
 
-    // --- State for Validation Errors ---
     private val _emailError = mutableStateOf<String?>(null)
     val emailError: State<String?> = _emailError
 
     private val _passwordError = mutableStateOf<String?>(null)
     val passwordError: State<String?> = _passwordError
 
-    // --- State Update Functions ---
     fun storeEmail(value: String) {
         _email.value = value
-        _emailError.value = null // Clear error on change
+        _emailError.value = null
     }
 
     fun storePassword(value: String) {
         _password.value = value
-        _passwordError.value = null // Clear error on change
+        _passwordError.value = null
     }
 
-    /**
-     * Validates all input fields and returns true if they are valid.
-     * Updates error states for the UI to observe.
-     */
     fun validateInputs(): Boolean {
         if (!Patterns.EMAIL_ADDRESS.matcher(_email.value).matches()) {
             _emailError.value = "Please enter a valid email address"

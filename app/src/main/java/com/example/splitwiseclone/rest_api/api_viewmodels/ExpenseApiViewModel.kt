@@ -83,14 +83,14 @@ class ExpenseApiViewModel @Inject constructor(
             val response = apiService.deleteExpense(expenseId)
             if (response.isSuccessful) {
                 Log.d("ExpenseApiViewModel", "Successfully deleted expense $expenseId on server.")
-                true // Return true for success
+                true
             } else {
                 Log.e("ExpenseApiViewModel", "Error deleting expense: ${response.code()} - ${response.message()}")
-                false // Return false for server errors
+                false
             }
         } catch (e: Exception) {
             Log.e("ExpenseApiViewModel", "Exception while deleting expense", e)
-            false // Return false for network or other exceptions
+            false
         }
     }
 

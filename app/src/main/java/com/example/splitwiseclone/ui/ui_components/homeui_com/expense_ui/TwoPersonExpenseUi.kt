@@ -30,11 +30,8 @@ import com.example.splitwiseclone.ui_viewmodels.TwoPersonExpenseViewModel
 fun TwoPersonExpenseUi(
     navController: NavHostController,
     friendId: String,
-    // FIX: Receive the parent screen's navigation entry
     parentEntry: NavBackStackEntry
 ) {
-    // FIX: Scope the ViewModel to the parent entry. This is the key to sharing the state.
-    // It guarantees that this screen and AddExpenseScreen use the SAME ViewModel instance.
     val twoPersonExpenseViewModel: TwoPersonExpenseViewModel = hiltViewModel(parentEntry)
     val friendsRoomViewModel: FriendsRoomViewModel = hiltViewModel()
 
@@ -131,7 +128,7 @@ private fun SplitOptionRow(text: String, isSelected: Boolean, onClick: () -> Uni
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Default.PlayArrow, // Changed for better visual
+            imageVector = Icons.Default.PlayArrow,
             contentDescription = "Split Option",
             tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
         )

@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// UI State for the friend settings screen
 data class FriendSettingsUiState(
     val friend: Friend? = null,
     val sharedGroups: List<Group> = emptyList(),
@@ -58,30 +57,22 @@ class FriendSettingsViewModel @Inject constructor(
         initialValue = FriendSettingsUiState()
     )
 
-    // FIX: The logic is now structured correctly for an API call that returns Unit.
     fun deleteFriend(onSuccess: () -> Unit) {
         val friendToDelete = uiState.value.friend ?: return
         val currentUserId = friendToDelete.currentUserId
 
         viewModelScope.launch {
             try {
-                // 1. Call the API to delete the friend on the server.
-                // If this function throws an exception, the `catch` block will be executed.
                 apiService.deleteFriend(
                     currentUserId = currentUserId,
                     friendId = friendToDelete.friendId
                 )
-
-                // 2. If the API call completes without error, it means it was successful.
-                // We can now safely update our local database.
                 friendRepository.deleteFriend(friendToDelete)
                 Log.d("FriendSettingsVM", "Successfully deleted friend.")
 
-                // 3. Signal success to the UI to trigger navigation.
                 onSuccess()
 
             } catch (e: Exception) {
-                // This block will catch any network errors or HTTP error codes (like 404, 500, etc.).
                 Log.e("FriendSettingsVM", "Exception while deleting friend", e)
             }
         }

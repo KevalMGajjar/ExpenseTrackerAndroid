@@ -2,4 +2,18 @@
 <resources>
 
     <style name="Theme.SplitWiseClone" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <!-- This is the dedicated theme for the native splash screen -->
+    <style name="Theme.App.Starting" parent="Theme.SplashScreen">
+        <!-- The background color -->
+        <item name="windowSplashScreenBackground">@android:color/white</item>
+
+        <!-- FIX: Point this to your new, unified logo drawable. -->
+        <!-- This will show the complete logo (green circle + white plus) instantly. -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+
+        <!-- The theme to use after the splash screen -->
+        <item name="postSplashScreenTheme">@style/Theme.SplitWiseClone</item>
+    </style>
+
 </resources>

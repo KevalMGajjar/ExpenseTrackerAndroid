@@ -72,35 +72,35 @@ class UserApiViewModel @Inject constructor(
             }
         }
     }
+
     fun loginUser(email: String, password: String) {
         viewModelScope.launch {
             try {
-                val request = UserLoginRequest(
-                    email,
-                    password
-                )
+                val request = UserLoginRequest(email, password)
                 val response = apiService.loginUser(request)
-                tokenManager.saveTokens(accessToken = response.accessToken, refreshToken = response.refreshToken)
 
+                tokenManager.saveTokens(accessToken = response.accessToken, refreshToken = response.refreshToken)
                 currentUserRepository.insertUser(CurrentUser(
-                    username = response.username,
-                    currentUserId = response.userId,
-                    email = response.email,
-                    phoneNumber = response.phoneNumber,
-                    profileUrl = response.profilePicture,
-                    currencyCode = response.defaultCurrencyCode,
+                    username = response.username, currentUserId = response.userId,
+                    email = response.email, phoneNumber = response.phoneNumber,
+                    profileUrl = response.profilePicture, currencyCode = response.defaultCurrencyCode,
                     hashedPassword = response.hashedPassword
                 ))
-
                 dataStoreManager.saveLoginStatus(true)
 
-                // On success, update the state variable for the UI to observe.
                 _loginSuccess.value = true
 
+            } catch (e: retrofit2.HttpException) {
+                val errorMessage = when (e.code()) {
+                    401 -> "Incorrect password. Please try again."
+                    404 -> "No user found with that email address."
+                    else -> "An unexpected error occurred."
+                }
+                _loginError.value = errorMessage
+                Log.e("UserApiViewModel", "Login failed with HTTP error: ${e.code()}", e)
             } catch (e: Exception) {
-                Log.e("UserViewModel", "Login failed with an exception", e)
-                // On failure, update the error state for the UI to observe.
-                _loginError.value = "Login failed. Please check your credentials."
+                Log.e("UserApiViewModel", "Login failed with an exception", e)
+                _loginError.value = "Could not connect to the server."
             }
         }
     }
@@ -144,7 +144,6 @@ class UserApiViewModel @Inject constructor(
         oldPassword: String? = null,
         newProfilePicture: String? = null,
         newPhoneNumber: String? = null,
-        // FIX: The onSuccess callback now provides the updated user object
         onSuccess: (updatedUser: CurrentUser) -> Unit
     ) {
         if (currentUserId != null) {
@@ -159,10 +158,8 @@ class UserApiViewModel @Inject constructor(
 
             viewModelScope.launch {
                 try {
-                    // FIX: The API service now returns the updated user object from the server
                     val responseUser = apiService.updateCurrentUser(request)
 
-                    // Map the server response to your local CurrentUser entity
                     val updatedCurrentUser = CurrentUser(
                         currentUserId = responseUser.userId,
                         username = responseUser.username,
@@ -172,8 +169,6 @@ class UserApiViewModel @Inject constructor(
                         currencyCode = responseUser.defaultCurrencyCode!!,
                         hashedPassword = responseUser.hashedPassword!!
                     )
-
-                    // Pass the new, correct user object back to the calling screen
                     onSuccess(updatedCurrentUser)
 
                 } catch (e: Exception) {
@@ -183,18 +178,15 @@ class UserApiViewModel @Inject constructor(
         }
     }
 
-    // In your UserApiViewModel.kt file
-
     fun deleteUserAccount(userId: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
                 val response = apiService.deleteUserAccount(userId)
                 if (response.isSuccessful) {
                     Log.d("UserApiViewModel", "Successfully deleted user account on server.")
-                    onSuccess() // Signal to the UI that the API call was successful
+                    onSuccess()
                 } else {
                     Log.e("UserApiViewModel", "API error deleting user account: ${response.code()}")
-                    // Optionally, you could add an onError callback here
                 }
             } catch (e: Exception) {
                 Log.e("UserApiViewModel", "Exception while deleting user account", e)

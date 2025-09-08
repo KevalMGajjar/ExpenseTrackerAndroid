@@ -54,7 +54,8 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom)) // Excellent! This manages Compose versions.
+    implementation(platform(libs.androidx.compose.bom))
+    implementation("androidx.compose.runtime:runtime-livedata")// Excellent! This manages Compose versions.
 
     // UI - Jetpack Compose & Material 3
     implementation(libs.androidx.ui)
@@ -100,6 +101,9 @@ dependencies {
 
     //datastore
     implementation("androidx.datastore:datastore-preferences:1.1.0")
+
+    //splash
+    implementation("androidx.core:core-splashscreen:1.0.1")
 
     // Testing & Debugging
     testImplementation(libs.junit)

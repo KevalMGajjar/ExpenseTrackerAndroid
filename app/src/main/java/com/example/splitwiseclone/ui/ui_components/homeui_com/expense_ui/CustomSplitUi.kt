@@ -18,19 +18,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
-import com.example.splitwiseclone.ui_viewmodels.AddExpenseViewModel
 import com.example.splitwiseclone.ui_viewmodels.SplitOptionsViewModel
 import com.example.splitwiseclone.ui_viewmodels.SplitType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomSplitUi(
+fun CustomSplitScreen(
     navController: NavHostController,
     parentEntry: NavBackStackEntry
 ) {
-    // Scope ViewModels to the parent screen's navigation entry to share state
     val splitOptionsViewModel: SplitOptionsViewModel = hiltViewModel(parentEntry)
-    val addExpenseViewModel: AddExpenseViewModel = hiltViewModel(parentEntry)
 
     val participants by splitOptionsViewModel.participants.collectAsState()
     val splitType by splitOptionsViewModel.splitType.collectAsState()
@@ -46,11 +43,9 @@ fun CustomSplitUi(
                 navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
                 actions = {
                     IconButton(onClick = {
-                        val splitText = if(splitType == SplitType.EQUALLY) "Split Equally" else "Split Unequally"
-                        addExpenseViewModel.commitSplitSelection(
-                            newSplits = splitOptionsViewModel.finalSplits,
-                            text = splitText
-                        )
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("split_result", splitOptionsViewModel.finalSplits)
                         navController.popBackStack()
                     }) { Icon(Icons.Default.Check, "Done") }
                 }
@@ -72,7 +67,7 @@ fun CustomSplitUi(
                             OutlinedTextField(
                                 value = unequalAmounts[participant.id] ?: "",
                                 onValueChange = { amount -> splitOptionsViewModel.updateUnequalAmount(participant.id, amount) },
-                                prefix = { Text("$") }
+                                prefix = { Text("₹") }
                             )
                         }
                     }

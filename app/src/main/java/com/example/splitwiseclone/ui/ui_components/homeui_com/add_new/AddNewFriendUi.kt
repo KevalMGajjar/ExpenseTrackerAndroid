@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.splitwiseclone.rest_api.api_viewmodels.FriendApiViewModel
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
@@ -38,9 +39,9 @@ data class ContactInfo(val name: String, val numbers: List<String>)
 @Composable
 fun AddNewFriendUi(
     navHostController: NavHostController,
-    currentUserViewModel: CurrentUserViewModel,
-    friendApiViewModel: FriendApiViewModel,
-    addFriendViewModel: AddFriendViewModel
+    currentUserViewModel: CurrentUserViewModel = hiltViewModel(),
+    friendApiViewModel: FriendApiViewModel = hiltViewModel(),
+    addFriendViewModel: AddFriendViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val permissionState = rememberPermissionState(android.Manifest.permission.READ_CONTACTS)
@@ -79,7 +80,7 @@ fun AddNewFriendUi(
                         friendApiViewModel.addNewFriend(
                             phoneNumbers = selectedNumbers,
                             currentUser = currentUser!!,
-                            onSuccess = { navHostController.navigate("friendsUi") { popUpTo("friendsUi") { inclusive = true } } },
+                            onSuccess = { navHostController.navigate("dashboard") { popUpTo("friendsUi") { inclusive = true } } },
                             onUserNotFound = { phoneNumber -> userNotFoundNumber = phoneNumber }
                         )
                         addFriendViewModel.deleteSelectedNumbers()

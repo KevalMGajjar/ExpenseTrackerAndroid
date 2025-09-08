@@ -36,7 +36,6 @@ class SettleUpViewModel @Inject constructor(
     private val _amount = MutableStateFlow("0.00")
     val amount = _amount.asStateFlow()
 
-    // FIX: Add state to manage the payment direction
     private val _paymentDirection = MutableStateFlow<PaymentDirection?>(null)
     val paymentDirection = _paymentDirection.asStateFlow()
 
@@ -49,7 +48,6 @@ class SettleUpViewModel @Inject constructor(
                 val balance = _friend.value?.balanceWithUser ?: 0.0
                 _amount.value = String.format(Locale.US, "%.2f", abs(balance))
 
-                // FIX: Set the default payment direction based on the balance
                 if (balance < 0) {
                     _paymentDirection.value = PaymentDirection.USER_PAYS_FRIEND
                 } else if (balance > 0) {
@@ -73,7 +71,6 @@ class SettleUpViewModel @Inject constructor(
             else -> if (currentAmount == "0.00") key else currentAmount + key
         }
 
-        // FIX: Validate that the user cannot enter an amount greater than the balance.
         val balance = abs(_friend.value?.balanceWithUser ?: 0.0)
         val newAmount = newAmountStr.toDoubleOrNull() ?: 0.0
 
@@ -93,7 +90,6 @@ class SettleUpViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                // FIX: Determine the correct payer and receiver based on the selected direction.
                 val (payerId, receiverId) = when (direction) {
                     PaymentDirection.USER_PAYS_FRIEND -> currentUser.currentUserId to friendValue.friendId
                     PaymentDirection.FRIEND_PAYS_USER -> friendValue.friendId to currentUser.currentUserId
@@ -107,7 +103,6 @@ class SettleUpViewModel @Inject constructor(
                 val response = apiService.settleUp(request)
 
                 if (response.isSuccessful) {
-                    // This local balance update logic is now direction-aware.
                     val balanceChange = if (direction == PaymentDirection.USER_PAYS_FRIEND) amountToSettle else -amountToSettle
                     val updatedFriend = friendValue.copy(
                         balanceWithUser = friendValue.balanceWithUser + balanceChange

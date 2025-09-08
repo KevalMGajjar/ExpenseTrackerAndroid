@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -25,12 +25,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
 import com.example.splitwiseclone.roomdb.entities.Group
+import com.example.splitwiseclone.ui.ui_components.common.ProfileImage
 import com.example.splitwiseclone.ui_viewmodels.GroupProfileViewModel
 import com.example.splitwiseclone.ui_viewmodels.MemberBalance
+import com.example.splitwiseclone.utils.CurrencyUtils
 import java.util.*
 import kotlin.math.abs
+import com.example.splitwiseclone.R
 
 // --- Define Colors ---
 val HeaderBlue = Color(0xFF2D3E50)
@@ -38,44 +40,42 @@ val ButtonBackground = Color.Gray.copy(alpha = 0.1f)
 val TextPositive = Color(0xFF2E8B57)
 val TextNegative = Color(0xFFD32F2F)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GroupOuterProfileUi(
     navController: NavHostController,
     groupProfileViewModel: GroupProfileViewModel = hiltViewModel()
 ) {
-    // FIX: Directly collect the public uiState from the ViewModel.
-    // This creates a permanent subscription. Whenever the underlying expense data
-    // changes, the ViewModel will emit a new state, and this composable will
-    // automatically recompose with the fresh data.
     val uiState by groupProfileViewModel.uiState.collectAsState()
-
     var showSettleUpDialog by remember { mutableStateOf(false) }
 
-    if (uiState.isLoading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
-    } else {
-        uiState.group?.let { group ->
-            Column(modifier = Modifier.fillMaxSize()) {
-                GroupProfileHeader(navController, group, uiState.userBalanceInGroup)
-                GroupActionButtons(
-                    navController = navController,
-                    groupId = group.id,
-                    onSettleUpClick = { showSettleUpDialog = true }
-                )
-                MemberList(memberBalances = uiState.memberBalances)
+    Scaffold { padding ->
+        if (uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
+        } else {
+            uiState.group?.let { group ->
+                Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+                    GroupProfileHeader(navController, group, uiState.userBalanceInGroup)
+                    GroupActionButtons(
+                        navController = navController,
+                        groupId = group.id,
+                        onSettleUpClick = { showSettleUpDialog = true }
+                    )
+                    MemberList(memberBalances = uiState.memberBalances)
+                }
 
-            if (showSettleUpDialog) {
-                SettleUpMemberDialog(
-                    memberBalances = uiState.memberBalances.filter { abs(it.balanceWithCurrentUser) > 0.01 },
-                    onDismiss = { showSettleUpDialog = false },
-                    onMemberSelected = { friendId ->
-                        showSettleUpDialog = false
-                        navController.navigate("settleUp/$friendId")
-                    }
-                )
+                if (showSettleUpDialog) {
+                    SettleUpMemberDialog(
+                        memberBalances = uiState.memberBalances.filter { abs(it.balanceWithCurrentUser) > 0.01 },
+                        onDismiss = { showSettleUpDialog = false },
+                        onMemberSelected = { friendId ->
+                            showSettleUpDialog = false
+                            navController.navigate("settleUp/$friendId")
+                        }
+                    )
+                }
             }
         }
     }
@@ -90,16 +90,13 @@ fun GroupProfileHeader(navController: NavHostController, group: Group, userBalan
         ) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White) }
-                Text(
-                    text = group.groupName ?: "Group", color = Color.White, style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center, modifier = Modifier.weight(1f)
-                )
+                Text(text = group.groupName ?: "Group", color = Color.White, style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center, modifier = Modifier.weight(1f))
                 IconButton(onClick = { navController.navigate("groupSettingsUi/${group.id}") }) { Icon(Icons.Default.Settings, "Settings", tint = Color.White) }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "Your balance:", color = Color.White.copy(alpha = 0.8f))
+            Text(text = "Your group balance:", color = Color.White.copy(alpha = 0.8f))
             Text(
-                text = formatBalance(userBalance),
+                text = CurrencyUtils.formatCurrency(userBalance, withSign = true),
                 color = if (userBalance >= 0) TextPositive else TextNegative,
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold
@@ -116,22 +113,37 @@ fun GroupActionButtons(navController: NavHostController, groupId: String, onSett
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ActionButton(icon = Icons.Default.Add, text = "Add expense") {
-            navController.navigate("addExpense?groupId=$groupId")
-        }
-        ActionButton(icon = Icons.Default.Add, text = "Settle up", onClick = onSettleUpClick)
-        ActionButton(icon = Icons.Default.Add, text = "Add members") { navController.navigate("addNewGroupMemberUi/$groupId") }
+        ActionButton(
+            text = "Add expense",
+            icon = { Icon(Icons.Default.Add, contentDescription = "Add expense") },
+            onClick = { navController.navigate("addExpense?groupId=$groupId") }
+        )
+        ActionButton(
+            text = "Settle up",
+            icon = { Icon(painter = painterResource(R.drawable.attach_money_24dp_e3e3e3_fill0_wght400_grad0_opsz24), contentDescription = "Settle up") },
+            onClick = onSettleUpClick
+        )
+        ActionButton(
+            text = "Add members",
+            // This now correctly uses your custom drawable resource
+            icon = { Icon(painter = painterResource(R.drawable.group_add_24dp_e3e3e3_fill0_wght400_grad0_opsz24), contentDescription = "Add members") },
+            onClick = { navController.navigate("addNewGroupMemberUi/$groupId") }
+        )
     }
 }
 
 @Composable
-fun ActionButton(icon: ImageVector, text: String, onClick: () -> Unit) {
+fun ActionButton(
+    text: String,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable(onClick = onClick)) {
         Box(
             modifier = Modifier.size(60.dp).clip(CircleShape).background(ButtonBackground),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = text, tint = MaterialTheme.colorScheme.primary)
+            icon()
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = text, style = MaterialTheme.typography.bodyMedium)
@@ -154,10 +166,9 @@ fun MemberListItem(member: MemberBalance) {
         modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImage(
+        ProfileImage(
             model = member.profilePic, contentDescription = "Member profile",
-            modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.LightGray),
-            contentScale = ContentScale.Crop
+            modifier = Modifier.size(48.dp).clip(CircleShape)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(member.memberName, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
@@ -173,7 +184,7 @@ fun MemberListItem(member: MemberBalance) {
             Text(text, style = MaterialTheme.typography.bodySmall, color = color)
             if (abs(balance) > 0.01) {
                 Text(
-                    text = formatBalance(balance, withSign = false),
+                    text = CurrencyUtils.formatCurrency(balance, withSign = false),
                     fontWeight = FontWeight.Bold,
                     color = color
                 )
@@ -195,21 +206,11 @@ fun SettleUpMemberDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 if (memberBalances.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No outstanding balances to settle.",
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
-                        )
+                    Box(modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp), contentAlignment = Alignment.Center) {
+                        Text("No outstanding balances in this group.", color = Color.Gray, textAlign = TextAlign.Center)
                     }
                 } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
+                    LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 300.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         items(memberBalances) { member ->
                             MemberListItem(
                                 member = member,
@@ -219,14 +220,8 @@ fun SettleUpMemberDialog(
                         }
                     }
                 }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancel")
-                    }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
                 }
             }
         }
@@ -239,19 +234,9 @@ fun MemberListItem(member: MemberBalance, modifier: Modifier = Modifier) {
         modifier = modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImage(model = member.profilePic, contentDescription = "Member profile", modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.LightGray), contentScale = ContentScale.Crop)
+        ProfileImage(model = member.profilePic, contentDescription = "Member profile", modifier = Modifier.size(48.dp).clip(CircleShape))
         Spacer(modifier = Modifier.width(16.dp))
         Text(member.memberName, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-        Text(formatBalance(member.balanceWithCurrentUser), fontWeight = FontWeight.Bold, color = if (member.balanceWithCurrentUser >= 0) TextPositive else TextNegative)
+        Text(CurrencyUtils.formatCurrency(member.balanceWithCurrentUser), fontWeight = FontWeight.Bold, color = if (member.balanceWithCurrentUser >= 0) TextPositive else TextNegative)
     }
-}
-
-private fun formatBalance(amount: Double, withSign: Boolean = true): String {
-    val amountAbs = abs(amount)
-    val sign = when {
-        amount > 0.01 && withSign -> "+ "
-        amount < -0.01 && withSign -> "- "
-        else -> ""
-    }
-    return String.format(Locale.US, "%s$%.2f", sign, amountAbs)
 }

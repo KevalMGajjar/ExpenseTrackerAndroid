@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.splitwiseclone.R // Make sure to create this drawable resource
@@ -32,13 +33,12 @@ import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.common.api.ApiException
 
 @Composable
-fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiViewModel, currentUserViewModel: CurrentUserViewModel) {
+fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiViewModel = hiltViewModel(), currentUserViewModel: CurrentUserViewModel = hiltViewModel()) {
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(false) }
     val loginSuccess by userApiViewModel.loginSuccess.collectAsStateWithLifecycle()
     val currentUser by currentUserViewModel.currentUser.collectAsState()
 
-    // Animation for fade-in effect
     var startAnimation by remember { mutableStateOf(false) }
     val alphaAnim = animateFloatAsState(
         targetValue = if (startAnimation) 1f else 0f,
@@ -50,26 +50,20 @@ fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiVie
     }
 
     LaunchedEffect(loginSuccess, currentUser) {
-        // We only proceed if the login was successful AND the currentUser object has been updated.
         if (loginSuccess && currentUser != null) {
-            // Check if the user who just logged in has a phone number.
             if (currentUser?.phoneNumber.isNullOrBlank()) {
-                // If not, navigate to the screen to add one.
                 navHostController.navigate("addPhoneNumberUi") {
                     popUpTo("welcome") { inclusive = true }
                 }
             } else {
-                // If they do, navigate to the dashboard.
                 navHostController.navigate("dashboard") {
                     popUpTo("welcome") { inclusive = true }
                 }
             }
-            // Reset the login flag so this doesn't run again on recomposition.
             userApiViewModel.resetLoginStatus()
         }
     }
 
-    // --- Google One-Tap Sign-In Logic ---
     val signInRequest = remember {
         BeginSignInRequest.builder()
             .setGoogleIdTokenRequestOptions(
@@ -115,20 +109,17 @@ fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiVie
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Spacer(modifier = Modifier.height(1.dp)) // Spacer to push content down
+            Spacer(modifier = Modifier.height(1.dp))
 
-            // --- Header Section ---
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // You would add your app's logo or a relevant icon here
-                // For example, using a drawable resource:
                 Image(
-                    painter = painterResource(id = R.drawable.ic_splitwise_logo), // Placeholder - create this drawable
+                    painter = painterResource(id = R.drawable.ic_splash_logo),
                     contentDescription = "App Logo",
                     modifier = Modifier.size(120.dp)
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(
-                    text = "Welcome to Splitwise",
+                    text = "Welcome to Expense Tracker",
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -142,13 +133,11 @@ fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiVie
                 )
             }
 
-            // --- Action Buttons Section ---
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Google Sign-In Button
                 Button(
                     onClick = {
                         isLoading = true
@@ -185,7 +174,6 @@ fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiVie
                     }
                 }
 
-                // Sign Up and Log In Buttons
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly

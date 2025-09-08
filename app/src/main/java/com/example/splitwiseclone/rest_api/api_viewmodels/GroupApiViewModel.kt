@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.example.splitwiseclone.central.ApiClient
 import com.example.splitwiseclone.central.SyncRepository
 import com.example.splitwiseclone.rest_api.AddMemberRequest
+import com.example.splitwiseclone.rest_api.GroupUpdateRequest
 import com.example.splitwiseclone.rest_api.RestApiService
 import com.example.splitwiseclone.rest_api.SaveGroupRequest
 import com.example.splitwiseclone.rest_api.models.GroupApi
 import com.example.splitwiseclone.roomdb.entities.Friend
+import com.example.splitwiseclone.roomdb.entities.Group
 import com.example.splitwiseclone.roomdb.entities.Member
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -23,7 +25,6 @@ class GroupApiViewModel @Inject constructor(
 ): ViewModel() {
 
     fun saveGroup(group: GroupApi, onSuccess: (newGroupId: String) -> Unit) {
-        // Note: The function does not return a String anymore.
 
         val request = SaveGroupRequest(
             groupName = group.groupName,
@@ -34,22 +35,16 @@ class GroupApiViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                // 1. Wait for the API call to complete and get the ID.
                 val groupCreatedId = apiService.addGroup(request).groupId
 
-                // 2. Perform any other necessary operations, like syncing data.
                 syncRepository.syncAllData()
 
-                // 3. AFTER everything is successful, call the onSuccess callback
-                //    and pass the new ID back to the UI.
                 onSuccess(groupCreatedId)
 
             } catch (e: Exception) {
                 Log.e("GroupApiViewModel", "Error while adding group", e)
-                // Optionally, you could add an onError callback here to notify the UI of a failure.
             }
         }
-        // The immediate return and onSuccess() call are removed from here.
     }
 
     fun addMembers(members: List<Friend>, groupId: String, onSuccess: () -> Unit) {
@@ -81,7 +76,6 @@ class GroupApiViewModel @Inject constructor(
     fun deleteGroup(groupId: String, currentUserId: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
-                // FIX: Call the service with separate arguments
                 val response = apiService.deleteGroup(groupId, currentUserId)
                 if (response.isSuccessful) {
                     syncRepository.syncAllData()
@@ -98,7 +92,6 @@ class GroupApiViewModel @Inject constructor(
     fun deleteMembers(groupId: String, membersIds: List<String>, onSuccess: () -> Unit) {
         viewModelScope.launch {
             try {
-                // FIX: Call the service with separate arguments
                 val response = apiService.deleteMembers(groupId, membersIds)
                 if (response.isSuccessful) {
                     syncRepository.syncAllData()
@@ -108,6 +101,27 @@ class GroupApiViewModel @Inject constructor(
                 }
             } catch (e: Exception) {
                 Log.e("GroupApiViewModel", "Error while deleting members $membersIds $groupId", e)
+            }
+        }
+    }
+
+    fun updateGroup(
+        groupId: String,
+        newName: String,
+        onSuccess: () -> Unit,
+        onFailure: (errorMessage: String) -> Unit
+    ) {
+        val request = GroupUpdateRequest(groupId = groupId, groupName = newName)
+        viewModelScope.launch {
+            try {
+                val response = apiService.updateGroup(request)
+                if (response.isSuccessful && response.body() != null) {
+                    onSuccess()
+                } else {
+                    onFailure("Error: ${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                onFailure("Network request failed: ${e.message}")
             }
         }
     }

@@ -38,15 +38,11 @@ class FriendApiViewModel @Inject constructor(
         )
         viewModelScope.launch {
             try {
-                // The API call is now expected to succeed even if a user isn't found
                 val response = apiService.addFriends(request)
 
-                // Check the response body to see if any numbers were reported as not found
                 if (response.notFoundPhoneNumbers?.isNotEmpty() == true) {
-                    // If so, trigger the "User Not Found" dialog in the UI
                     onUserNotFound(response.notFoundPhoneNumbers.first())
                 } else if (response.friends.isNotEmpty()) {
-                    // If friends were found and added, save them to the local DB and call onSuccess
                     response.friends.forEach { friend ->
                         friendRepository.insertFriend(
                             Friend(
@@ -63,12 +59,10 @@ class FriendApiViewModel @Inject constructor(
                     syncRepository.syncAllData()
                     onSuccess()
                 } else {
-                    // This case handles when the user is already a friend. We can treat it as a success.
                     onSuccess()
                 }
 
             } catch (e: Exception) {
-                // This will now only catch major errors like network failures or 500 server errors
                 Log.e("FriendApiViewModel", "An error occurred while adding friends", e)
             }
         }

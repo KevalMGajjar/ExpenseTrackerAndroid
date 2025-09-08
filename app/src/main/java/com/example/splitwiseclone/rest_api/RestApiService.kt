@@ -81,8 +81,7 @@ data class SaveGroupRequest(
 
 data class GroupUpdateRequest(
     val groupId: String,
-    val groupName: String,
-    val profilePicture: String,
+    val groupName: String
 )
 
 data class AddMemberRequest(
@@ -183,7 +182,6 @@ data class UpdateFriendResponse(
     val currentUserId: String,
     val email: String?,
     val balanceWithUser: Double?
-
 )
 
 data class UpdateExpenseRequest(
@@ -243,17 +241,17 @@ interface RestApiService {
     @RequiresAuth
     suspend fun getAllFriends(@Body request: GetAllFriendsRequest): List<Friend>
 
-    @DELETE("friends/delete") // The URL must match your server's endpoint
+    @DELETE("friends/delete")
     suspend fun deleteFriend(
         @Query("currentUserId") currentUserId: String,
         @Query("friendId") friendId: String
-    ): Unit // It should return Unit
+    ): Unit
 
     @POST("friends/updateBalance")
     @RequiresAuth
     suspend fun updateFriendBalance(@Body request: UpdateFriendBalance)
 
-    @POST("user/update") // Assuming "/user" is your base path
+    @POST("user/update")
     suspend fun updateCurrentUser(@Body updateUserRequest: UpdateUserRequest): UserDto
 
     @POST("/group/add")
@@ -266,16 +264,14 @@ interface RestApiService {
         @Query("currentUserId") currentUserId: String
     ): Response<Unit>
 
-    // FIX: Send groupId in the path and memberIds as a list of query parameters
     @DELETE("group/deleteMembers/{groupId}")
     suspend fun deleteMembers(
         @Path("groupId") groupId: String,
         @Query("memberIds") memberIds: List<String>
     ): Response<Unit>
 
-    @POST("/group/update")
-    @RequiresAuth
-    suspend fun updateGroup(@Body request: GroupUpdateRequest)
+    @POST("group/update")
+    suspend fun updateGroup(@Body request: GroupUpdateRequest): Response<Unit>
 
     @POST("/group/addMembers")
     @RequiresAuth
@@ -298,7 +294,7 @@ interface RestApiService {
     @DELETE("/expense/delete/{id}")
     suspend fun deleteExpense(@Path("id") expenseId: String): Response<Void>
 
-    @POST("friends/settle") // The endpoint URL must match your controller
+    @POST("friends/settle")
     suspend fun settleUp(@Body request: SettleUpRequest): Response<Unit>
 
     @DELETE("user/delete/{userId}")

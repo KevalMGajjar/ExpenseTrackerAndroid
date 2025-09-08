@@ -1,4 +1,4 @@
-package com.example.splitwiseclone.ui.ui_components
+package com.example.splitwiseclone.ui.ui_components.homeui_com
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -25,15 +25,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
+import com.example.splitwiseclone.rest_api.SplitDto
 import com.example.splitwiseclone.rest_api.api_viewmodels.ExpenseApiViewModel
-import com.example.splitwiseclone.roomdb.entities.Expense
+import com.example.splitwiseclone.roomdb.entities.*
 import com.example.splitwiseclone.roomdb.expense.ExpenseRoomViewModel
-import com.example.splitwiseclone.roomdb.entities.Splits
-import com.example.splitwiseclone.roomdb.entities.Friend
 import com.example.splitwiseclone.roomdb.friends.FriendsRoomViewModel
-import com.example.splitwiseclone.roomdb.entities.Group
 import com.example.splitwiseclone.roomdb.groups.GroupRoomViewModel
-import com.example.splitwiseclone.roomdb.entities.CurrentUser
 import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
 import com.example.splitwiseclone.ui_viewmodels.AddExpenseViewModel
 import com.example.splitwiseclone.ui_viewmodels.PaidByViewModel
@@ -43,21 +40,51 @@ import com.example.splitwiseclone.ui_viewmodels.TwoPersonExpenseViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.max
+import androidx.compose.runtime.livedata.observeAsState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddExpenseUi(
     navController: NavHostController,
-    addExpenseViewModel: AddExpenseViewModel = hiltViewModel(),
     expenseApiViewModel: ExpenseApiViewModel = hiltViewModel(),
     expenseRoomViewModel: ExpenseRoomViewModel = hiltViewModel(),
     currentUserViewModel: CurrentUserViewModel = hiltViewModel(),
     friendsRoomViewModel: FriendsRoomViewModel = hiltViewModel(),
-    groupRoomViewModel: GroupRoomViewModel = hiltViewModel(),
-    twoPersonExpenseViewModel: TwoPersonExpenseViewModel = hiltViewModel(),
-    paidByViewModel: PaidByViewModel = hiltViewModel(),
-    splitOptionsViewModel: SplitOptionsViewModel = hiltViewModel()
+    groupRoomViewModel: GroupRoomViewModel = hiltViewModel()
 ) {
+    val parentEntry = remember(navController.currentBackStackEntry) {
+        navController.getBackStackEntry("expense_flow")
+    }
+
+    val addExpenseViewModel: AddExpenseViewModel = hiltViewModel(parentEntry)
+    val twoPersonExpenseViewModel: TwoPersonExpenseViewModel = hiltViewModel(parentEntry)
+    val paidByViewModel: PaidByViewModel = hiltViewModel(parentEntry)
+    val splitOptionsViewModel: SplitOptionsViewModel = hiltViewModel(parentEntry)
+
+    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
+
+    val payerResult = savedStateHandle?.getLiveData<Map<String, List<String>>>("payer_result")?.observeAsState()
+    LaunchedEffect(payerResult) {
+        payerResult?.value?.let { result ->
+            val payers = result["payerIds"] ?: emptyList()
+            val text = when (payers.size) {
+                0 -> "Select Payer"
+                1 -> "Paid by 1 person"
+                else -> "Paid by ${payers.size} people"
+            }
+            addExpenseViewModel.commitPayerSelection(payers, text)
+            savedStateHandle.remove<Map<String, List<String>>>("payer_result")
+        }
+    }
+
+    val splitResult = savedStateHandle?.getLiveData<List<SplitDto>>("split_result")?.observeAsState()
+    LaunchedEffect(splitResult) {
+        splitResult?.value?.let { newSplits ->
+            addExpenseViewModel.commitSplitSelection(newSplits, "Split Customly")
+            savedStateHandle.remove<List<SplitDto>>("split_result")
+        }
+    }
+
     val description by addExpenseViewModel.description.collectAsState()
     val totalAmount by addExpenseViewModel.totalAmount.collectAsState()
     val currentUser by currentUserViewModel.currentUser.collectAsState()
@@ -76,7 +103,6 @@ fun AddExpenseUi(
         }
     }
 
-    // This effect now correctly generates the splits for a 2-person expense
     LaunchedEffect(twoPersonSplitType, totalAmount, participants, currentUser) {
         if (participants.size == 2 && totalAmount.isNotBlank() && currentUser != null) {
             val amount = totalAmount.toDoubleOrNull() ?: 0.0
@@ -84,10 +110,10 @@ fun AddExpenseUi(
             val currentUserId = currentUser!!.currentUserId
 
             val newSplits = when (twoPersonSplitType) {
-                "1" -> listOf(com.example.splitwiseclone.rest_api.SplitDto(owedByUserId = friendId, owedAmount = amount / 2, owedToUserId = currentUserId))
-                "2" -> listOf(com.example.splitwiseclone.rest_api.SplitDto(owedByUserId = friendId, owedAmount = amount, owedToUserId = currentUserId))
-                "3" -> listOf(com.example.splitwiseclone.rest_api.SplitDto(owedByUserId = currentUserId, owedAmount = amount / 2, owedToUserId = friendId))
-                "4" -> listOf(com.example.splitwiseclone.rest_api.SplitDto(owedByUserId = currentUserId, owedAmount = amount, owedToUserId = friendId))
+                "1" -> listOf(SplitDto(owedByUserId = friendId, owedAmount = amount / 2, owedToUserId = currentUserId))
+                "2" -> listOf(SplitDto(owedByUserId = friendId, owedAmount = amount, owedToUserId = currentUserId))
+                "3" -> listOf(SplitDto(owedByUserId = currentUserId, owedAmount = amount / 2, owedToUserId = friendId))
+                "4" -> listOf(SplitDto(owedByUserId = currentUserId, owedAmount = amount, owedToUserId = friendId))
                 else -> emptyList()
             }
             val newPaidBy = if (twoPersonSplitType in listOf("3", "4")) listOf(friendId) else listOf(currentUserId)
@@ -112,7 +138,7 @@ fun AddExpenseUi(
                             expenseApiViewModel.addExpense(
                                 groupId = selectedGroupId,
                                 createdByUserId = currentUser!!.currentUserId, totalExpense = totalAmount.toDouble(),
-                                description = description, expenseDate = date, currencyCode = "USD",
+                                description = description, expenseDate = date, currencyCode = "INR",
                                 splitType = finalSplitType,
                                 splits = splits, paidByUserIds = paidByUserIds, participants = participants,
                                 onSuccess = { newExpense ->
@@ -127,7 +153,7 @@ fun AddExpenseUi(
                                         onSuccess = {
                                             addExpenseViewModel.resetState()
                                             twoPersonExpenseViewModel.selectSplit("1")
-                                            navController.navigate("dashboard") { popUpTo("dashboard") { inclusive = true } }
+                                            navController.navigate("dashboard")
                                         }
                                     )
                                 }
@@ -142,7 +168,7 @@ fun AddExpenseUi(
             Card(elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = description, onValueChange = { addExpenseViewModel.storeDescription(it) }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth(), leadingIcon = { Icon(Icons.Default.Menu, null) })
-                    OutlinedTextField(value = totalAmount, onValueChange = { addExpenseViewModel.storeTotalAmount(it) }, label = { Text("Amount") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), leadingIcon = { Text("$", fontSize = 18.sp) })
+                    OutlinedTextField(value = totalAmount, onValueChange = { addExpenseViewModel.storeTotalAmount(it) }, label = { Text("Amount") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.fillMaxWidth(), leadingIcon = { Text("₹", fontSize = 18.sp) })
                 }
             }
 
@@ -243,14 +269,13 @@ fun SelectableRow(name: String, imageUrl: String, isSelected: Boolean, onSelect:
 @Composable
 fun ActionButtons(
     navController: NavHostController, addExpenseViewModel: AddExpenseViewModel,
-    twoPersonExpenseViewModel: TwoPersonExpenseViewModel, // FIX: Added this parameter
+    twoPersonExpenseViewModel: TwoPersonExpenseViewModel,
     paidByViewModel: PaidByViewModel,
     splitOptionsViewModel: SplitOptionsViewModel, allFriends: List<Friend>, currentUser: CurrentUser?
 ) {
     val participants by addExpenseViewModel.participants.collectAsState()
     val totalAmount by addExpenseViewModel.totalAmount.collectAsState()
 
-    // FIX: Get the text state from the correct ViewModels
     val twoPersonSplitText by twoPersonExpenseViewModel.selectedSplitText.collectAsState()
     val paidByText by addExpenseViewModel.paidByText.collectAsState()
     val splitText by addExpenseViewModel.splitText.collectAsState()

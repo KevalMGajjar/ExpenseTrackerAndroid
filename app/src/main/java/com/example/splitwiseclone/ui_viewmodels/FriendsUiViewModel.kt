@@ -12,8 +12,9 @@ class FriendsUiViewModel @Inject constructor(
 
 ): ViewModel() {
 
-    private val _selectedFriend = MutableStateFlow<Friend?>(null)
-    val selectedFriend: StateFlow<Friend?> = _selectedFriend
+    private val _selectedFriend = MutableStateFlow<Friend?>(Friend(id= "", username = "", email = "", phoneNumber = "", profilePic = "", balanceWithUser = 0.0, currentUserId = "", friendId = ""))
+    val selectedFriend = _selectedFriend
+
 
     fun selectFriend(friend: Friend) {
         _selectedFriend.value = friend

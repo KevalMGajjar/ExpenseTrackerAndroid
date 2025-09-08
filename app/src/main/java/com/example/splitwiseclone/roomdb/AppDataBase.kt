@@ -6,14 +6,14 @@ import androidx.room.TypeConverters
 import com.example.splitwiseclone.roomdb.converters.ExpenseDbConvertor
 import com.example.splitwiseclone.roomdb.converters.GroupDbConvertor
 import com.example.splitwiseclone.roomdb.dao.*
-import com.example.splitwiseclone.roomdb.entities.* // Assuming your entities are here
+import com.example.splitwiseclone.roomdb.entities.*
 
 @Database(
-    entities = [CurrentUser::class, Friend::class, Group::class, Expense::class], // List ALL your entities here
-    version = 1, // Increment this version if you change the schema
+    entities = [CurrentUser::class, Friend::class, Group::class, Expense::class],
+    version = 1,
     exportSchema = false
 )
-@TypeConverters(ExpenseDbConvertor::class, GroupDbConvertor::class) // List ALL your converters here
+@TypeConverters(ExpenseDbConvertor::class, GroupDbConvertor::class)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun currentUserDao(): CurrentUserDao

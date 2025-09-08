@@ -2,106 +2,70 @@ package com.example.splitwiseclone.ui.ui_components.homeui_com.friend_profile_ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.example.splitwiseclone.roomdb.entities.Expense
 import com.example.splitwiseclone.roomdb.entities.Friend
-import com.example.splitwiseclone.roomdb.expense.ExpenseRoomViewModel
 import com.example.splitwiseclone.roomdb.entities.CurrentUser
-import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
-import com.example.splitwiseclone.ui_viewmodels.FriendsUiViewModel
+import com.example.splitwiseclone.ui_viewmodels.FriendProfileViewModel
+import com.example.splitwiseclone.utils.CurrencyUtils
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import kotlin.math.abs
+import com.example.splitwiseclone.R
 
-// --- Define Colors ---
 val HeaderBlue = Color(0xFF2D3E50)
 val ButtonBackground = Color.Gray.copy(alpha = 0.1f)
 val TextPositive = Color(0xFF2E8B57)
 val TextNegative = Color(0xFFD32F2F)
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FriendOuterProfileUi(
-    navHostController: NavHostController,
-    friendsUiViewModel: FriendsUiViewModel,
-    expenseRoomViewModel: ExpenseRoomViewModel,
-    currentUserViewModel: CurrentUserViewModel
+    navController: NavHostController,
+    friendProfileViewModel: FriendProfileViewModel = hiltViewModel()
 ) {
-    val friend by friendsUiViewModel.selectedFriend.collectAsState()
-    val currentUser by currentUserViewModel.currentUser.collectAsState()
+    val uiState by friendProfileViewModel.uiState.collectAsState()
+    Scaffold { padding ->
+        if (uiState.isLoading || uiState.friend == null) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else {
+            val friend = uiState.friend!!
+            val relatedExpenses = uiState.relatedExpenses
 
-    LaunchedEffect(currentUser, friend) {
-        if (currentUser != null && friend != null) {
-            expenseRoomViewModel.getAllRelatedExpenses(
-                id = currentUser!!.currentUserId,
-                friendId = friend!!.friendId
-            )
-        }
-    }
-    val relatedExpenses by expenseRoomViewModel.relatedExpenses.collectAsState()
-
-    if (currentUser != null && friend != null) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            FriendProfileHeader(navHostController, friend!!)
-            ActionButtons(navHostController, friend!!)
-            TransactionList(
-                expenses = relatedExpenses,
-                currentUser = currentUser!!,
-                friend = friend!!,
-                navHostController = navHostController
-            )
-        }
-    } else {
-        // Optional: Show a loading indicator or an empty state
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text("Loading...")
+            Column(modifier = Modifier.padding(padding).fillMaxSize()) {
+                FriendProfileHeader(navController, friend)
+                ActionButtons(navController, friend)
+                TransactionList(
+                    expenses = relatedExpenses,
+                    currentUser = CurrentUser(currentUserId = friend.currentUserId, username = "You", email = "", profileUrl = "", phoneNumber = null, currencyCode = "", hashedPassword = ""),
+                    friend = friend,
+                    navHostController = navController
+                )
+            }
         }
     }
 }
@@ -137,9 +101,9 @@ fun FriendProfileHeader(navController: NavHostController, friend: Friend) {
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
-            Text(text = "Total:", color = Color.White.copy(alpha = 0.8f))
+            Text(text = "Total balance:", color = Color.White.copy(alpha = 0.8f))
             Text(
-                text = formatBalance(friend.balanceWithUser, isTotal = true),
+                text = CurrencyUtils.formatCurrency(friend.balanceWithUser, withSign = true),
                 color = if (friend.balanceWithUser >= 0) TextPositive else TextNegative,
                 fontSize = 48.sp,
                 fontWeight = FontWeight.Bold
@@ -152,34 +116,42 @@ fun FriendProfileHeader(navController: NavHostController, friend: Friend) {
 @Composable
 fun ActionButtons(navController: NavHostController, friend: Friend) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 24.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        ActionButton(icon = Icons.Default.CheckCircle, text = "Settle up") {
-            val friendId = friend.friendId
-            navController.navigate("settleUp/$friendId") }
-        ActionButton(icon = Icons.Default.Send, text = "Send reminder") { /* TODO: Send reminder logic */ }
-        ActionButton(icon = Icons.Default.Share, text = "Share payment") { /* TODO: Share payment logic */ }
+        ActionButton(
+            text = "Settle up",
+            icon = { Icon(painter = painterResource(R.drawable.attach_money_24dp_e3e3e3_fill0_wght400_grad0_opsz24), contentDescription = "Settle up") },
+            onClick = { navController.navigate("settleUp/${friend.friendId}") }
+        )
+        ActionButton(
+            text = "Send reminder",
+            icon = { Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send reminder") },
+            onClick = { /* TODO */ }
+        )
+        ActionButton(
+            text = "Share payment",
+            icon = { Icon(Icons.Default.Share, contentDescription = "Share payment") },
+            onClick = { /* TODO */ }
+        )
     }
 }
 
 @Composable
-fun ActionButton(icon: ImageVector, text: String, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick)
-    ) {
+fun ActionButton(
+    text: String,
+    icon: @Composable () -> Unit,
+    onClick: () -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clickable(onClick = onClick)) {
         Box(
-            modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape)
-                .background(ButtonBackground),
+            modifier = Modifier.size(60.dp).clip(CircleShape).background(ButtonBackground),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, contentDescription = text, tint = MaterialTheme.colorScheme.primary)
+            ProvideTextStyle(value = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.primary)) {
+                icon()
+            }
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = text, style = MaterialTheme.typography.bodyMedium)
@@ -213,9 +185,9 @@ fun TransactionList(
         val filteredExpenses = expenses.filter { expense ->
             val userPortion = calculateUserPortion(expense, currentUser, friend)
             when (selectedIndex) {
-                1 -> userPortion > 0 // You are owed
-                2 -> userPortion < 0 // You owe
-                else -> true // All
+                1 -> userPortion > 0
+                2 -> userPortion < 0
+                else -> true
             }
         }
         items(filteredExpenses) { expense ->
@@ -234,7 +206,7 @@ fun TransactionList(
 fun TransactionItem(expense: Expense, currentUser: CurrentUser, friend: Friend, onClick: () -> Unit) {
     val userPortion = calculateUserPortion(expense, currentUser, friend)
 
-    if (userPortion != 0.0) {
+    if (abs(userPortion) > 0.01) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -249,25 +221,23 @@ fun TransactionItem(expense: Expense, currentUser: CurrentUser, friend: Friend, 
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = getCategoryIcon(expense.description ?: ""),
-                    contentDescription = "Category",
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                ProvideTextStyle(value = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onPrimaryContainer)) {
+                    getCategoryIcon(expense.description ?: "")()
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = expense.description ?: "Expense", fontWeight = FontWeight.Medium)
-                Text(text = "You paid ${formatBalance(expense.totalExpense, isTotal = true)}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                Text(text = "You paid ${CurrencyUtils.formatCurrency(expense.totalExpense)}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = SimpleDateFormat("dd MMMM yyyy", Locale.getDefault()).format(Date()), // Placeholder date
+                    text = expense.expenseDate,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
                 Text(
-                    text = formatBalance(userPortion),
+                    text = CurrencyUtils.formatCurrency(userPortion, withSign = true),
                     fontWeight = FontWeight.Bold,
                     color = if (userPortion > 0) TextPositive else TextNegative
                 )
@@ -277,10 +247,9 @@ fun TransactionItem(expense: Expense, currentUser: CurrentUser, friend: Friend, 
 }
 
 // --- Utility Functions ---
-
 private fun calculateUserPortion(expense: Expense, currentUser: CurrentUser, friend: Friend): Double {
-    val splitOwedByUser = expense.splits.find { it.owedByUserId == currentUser.currentUserId && it.owedToUserId == friend.friendId }
     val splitOwedToUser = expense.splits.find { it.owedByUserId == friend.friendId && it.owedToUserId == currentUser.currentUserId }
+    val splitOwedByUser = expense.splits.find { it.owedByUserId == currentUser.currentUserId && it.owedToUserId == friend.friendId }
 
     return when {
         splitOwedToUser != null -> splitOwedToUser.owedAmount
@@ -289,24 +258,13 @@ private fun calculateUserPortion(expense: Expense, currentUser: CurrentUser, fri
     }
 }
 
-
-private fun formatBalance(amount: Double, isTotal: Boolean = false): String {
-    val sign = when {
-        amount > 0 && !isTotal -> "+"
-        amount < 0 -> "-"
-        else -> ""
-    }
-    val formattedAmount = String.format(Locale.US, "%.2f", abs(amount))
-    return "$sign$$formattedAmount"
-}
-
-
-private fun getCategoryIcon(description: String): ImageVector {
+@Composable
+private fun getCategoryIcon(description: String): @Composable () -> Unit {
     return when {
-        "uber" in description.lowercase() -> Icons.Default.Person
-        "grocer" in description.lowercase() -> Icons.Default.ShoppingCart
-        "cinema" in description.lowercase() || "movie" in description.lowercase() -> Icons.Default.ShoppingCart
-        "present" in description.lowercase() || "gift" in description.lowercase() -> Icons.Default.ShoppingCart
-        else -> Icons.Default.ShoppingCart
+        "uber" in description.lowercase() -> { { Icon(painter = painterResource(R.drawable.local_taxi_24dp_e3e3e3_fill0_wght400_grad0_opsz24), "Taxi") } }
+        "grocer" in description.lowercase() -> { { Icon(painter = painterResource(R.drawable.shopping_cart_24dp_e3e3e3_fill0_wght400_grad0_opsz24), "Groceries") } }
+        "cinema" in description.lowercase() || "movie" in description.lowercase() -> { { Icon(painter = painterResource(R.drawable.movie_24dp_e3e3e3_fill0_wght400_grad0_opsz24), "Movie") } }
+        "present" in description.lowercase() || "gift" in description.lowercase() -> { { Icon(painter = painterResource(R.drawable.featured_seasonal_and_gifts_24dp_e3e3e3_fill0_wght400_grad0_opsz24), "Gift") } }
+        else -> { { Icon(painterResource(R.drawable.attach_money_24dp_e3e3e3_fill0_wght400_grad0_opsz24), "Default Expense") } } // Use a more appropriate default
     }
 }

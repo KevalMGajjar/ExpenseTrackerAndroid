@@ -19,7 +19,6 @@ import java.util.Locale
 import javax.inject.Inject
 import kotlin.collections.map
 
-// --- Data classes to hold the processed data for the UI ---
 
 data class MonthlyExpenseSummary(
     val month: String,
@@ -32,8 +31,6 @@ data class GroupBalanceSummary(
     val group: Group,
     val userBalanceInGroup: Double
 )
-
-// FIX: This new state holds all three required balance types.
 data class DashboardBalances(
     val totalBalance: Double = 0.0,
     val totalYouOwe: Double = 0.0,
@@ -51,7 +48,7 @@ data class HomeUiState(
 class DashBoardViewModel @Inject constructor(
     private val expenseRepository: ExpenseRepository,
     private val groupRepository: GroupRepository,
-    private val friendRepository: FriendRepository, // Added to get friend data
+    private val friendRepository: FriendRepository,
     private val balanceCalculator: BalanceCalculator
 ) : ViewModel() {
 
@@ -62,13 +59,11 @@ class DashBoardViewModel @Inject constructor(
 
         return combine(expensesFlow, groupsFlow, friendsFlow) { expenses, groups, friends ->
 
-            // FIX: Use the BalanceCalculator to get the TRUE total balance across ALL expenses.
             val overallBalanceResult = balanceCalculator.calculateBalances(expenses, currentUser.currentUserId)
 
             var totalYouOwe = 0.0
             var totalYouAreOwed = 0.0
 
-            // Iterate through the per-user balances to calculate totals.
             overallBalanceResult.balancePerUser.values.forEach { balance ->
                 if (balance < 0) {
                     totalYouOwe += balance

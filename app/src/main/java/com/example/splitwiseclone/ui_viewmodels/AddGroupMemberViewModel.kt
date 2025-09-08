@@ -16,15 +16,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AddGroupMemberViewModel @Inject constructor(
-    // FIX: Inject the repository and SavedStateHandle
     private val groupRepository: GroupRepository,
     savedStateHandle: SavedStateHandle
 ): ViewModel() {
 
-    // FIX: Get the groupId from the navigation arguments
     private val groupId: String? = savedStateHandle.get<String>("groupId")
 
-    // FIX: Add state to hold the current group being edited
     private val _currentGroup = MutableStateFlow<Group?>(null)
     val currentGroup = _currentGroup.asStateFlow()
 
@@ -32,7 +29,6 @@ class AddGroupMemberViewModel @Inject constructor(
     val selectedFriends: StateFlow<List<Friend>> = _selectedFriends
 
     init {
-        // FIX: If a groupId is passed, load the group's data
         if (groupId != null) {
             viewModelScope.launch {
                 _currentGroup.value = groupRepository.getGroupById(groupId).firstOrNull()

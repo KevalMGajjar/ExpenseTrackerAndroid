@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -93,7 +94,7 @@ fun SettleUpScreen(
                     onClick = {
                         currentUser?.let { user ->
                             viewModel.settlePayment(user) {
-                                navController.navigate("friendsUi")
+                                navController.popBackStack()
                             }
                         }
                     },
@@ -118,8 +119,6 @@ fun PaymentDirectionSelector(
     direction: PaymentDirection?,
     onDirectionChange: (PaymentDirection) -> Unit
 ) {
-    // FIX: The rotation of the arrow is the ONLY thing that should change based on the direction state.
-    // The positions of the user chips are now static.
     val rotation by animateFloatAsState(
         targetValue = if (direction == PaymentDirection.USER_PAYS_FRIEND) 0f else 180f,
         animationSpec = tween(300),
@@ -134,7 +133,6 @@ fun PaymentDirectionSelector(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable {
-                    // A single click toggles the direction
                     val newDirection = if (direction == PaymentDirection.USER_PAYS_FRIEND) PaymentDirection.FRIEND_PAYS_USER else PaymentDirection.USER_PAYS_FRIEND
                     onDirectionChange(newDirection)
                 }
@@ -142,7 +140,6 @@ fun PaymentDirectionSelector(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceAround
         ) {
-            // FIX: The user on the left is ALWAYS "You".
             UserInfoChip(name = userName, imageUrl = userImageUrl)
 
             Icon(
@@ -152,13 +149,11 @@ fun PaymentDirectionSelector(
                 tint = MaterialTheme.colorScheme.primary
             )
 
-            // FIX: The user on the right is ALWAYS the friend.
             UserInfoChip(name = friendName, imageUrl = friendImageUrl)
         }
     }
 }
 
-// A simple, reusable chip to display a user's avatar and name
 @Composable
 fun UserInfoChip(name: String, imageUrl: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -178,7 +173,7 @@ fun AmountDisplay(amount: String) {
         Text("Enter the amount", color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(text = "$", fontSize = 36.sp, color = Color.Gray, modifier = Modifier.padding(end = 4.dp))
+            Text(text = "₹", fontSize = 36.sp, color = Color.Gray, modifier = Modifier.padding(end = 4.dp))
             Text(text = amount, fontSize = 48.sp, fontWeight = FontWeight.Bold)
         }
     }

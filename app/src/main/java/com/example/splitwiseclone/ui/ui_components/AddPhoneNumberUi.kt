@@ -82,10 +82,8 @@ fun AddPhoneNumberScreen(
                         currentUserId = currentUser?.currentUserId,
                         newPhoneNumber = phoneNumber,
                         onSuccess = { updatedUserFromServer ->
-                            // After the server confirms, update the local database
                             currentUserViewModel.updateUser(updatedUserFromServer) {
                                 isLoading = false
-                                // After the local DB is updated, navigate to the dashboard
                                 navController.navigate("dashboard") {
                                     popUpTo("welcome") { inclusive = true }
                                 }

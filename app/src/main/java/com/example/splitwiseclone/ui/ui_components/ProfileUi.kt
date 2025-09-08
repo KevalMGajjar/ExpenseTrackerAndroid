@@ -97,12 +97,8 @@ fun ProfileUi(
             confirmButtonText = "Delete",
             onConfirm = {
                 showDeleteDialog = false
-                // FIX: This is the complete, correct, and final logic for deleting a user.
                 currentUser?.let { user ->
-                    // 1. Call the API to delete the user on the server.
                     userApiViewModel.deleteUserAccount(user.currentUserId) {
-                        // 2. On successful API response, trigger the full logout flow,
-                        //    which clears all local data and navigates.
                         currentUserViewModel.logoutCurrentUser {
                             navHostController.navigate("welcome") {
                                 popUpTo(navHostController.graph.startDestinationId) { inclusive = true }

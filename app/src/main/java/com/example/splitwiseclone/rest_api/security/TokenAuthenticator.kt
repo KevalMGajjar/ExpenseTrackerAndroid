@@ -62,13 +62,13 @@ class TokenAuthenticator @Inject constructor(
                     tokenManager.saveTokens(newTokens.accessToken, newTokens.refreshToken)
                     newTokens.accessToken
                 } else {
-                    null // Successful response but empty body
+                    null
                 }
             } else {
-                null // The refresh API call was not successful
+                null
             }
         } catch (e: Exception) {
-            null // A network error occurred
+            null
         }
     }
 }

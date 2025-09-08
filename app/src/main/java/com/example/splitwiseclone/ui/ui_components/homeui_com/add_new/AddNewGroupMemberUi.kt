@@ -40,11 +40,8 @@ fun AddNewGroupMemberUi(
 ) {
     val friendsList by friendsRoomViewModel.allUser.collectAsState()
     val selectedFriends by addGroupMemberViewModel.selectedFriends.collectAsState()
-    // FIX: Get the current group from the correct ViewModel
     val currentGroup by addGroupMemberViewModel.currentGroup.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
-
-    // This logic now works correctly because `currentGroup` is loaded from the database.
     val existingMemberIds = currentGroup?.members?.mapNotNull { it.userId } ?: emptyList()
     val availableFriends = friendsList.filter { it.friendId !in existingMemberIds }
 

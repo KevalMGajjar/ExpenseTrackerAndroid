@@ -33,9 +33,6 @@ object DatabaseModule {
         return ExpenseDbConvertor(moshi)
     }
 
-    // --- Single App Database Provider ---
-    // This is the single source of truth for your entire local database.
-
     @Provides
     @Singleton
     fun provideAppDatabase(
@@ -46,16 +43,13 @@ object DatabaseModule {
         return Room.databaseBuilder(
             context,
             AppDatabase::class.java,
-            "splitwise_app.db" // A single, unified database name
+            "splitwise_app.db"
         )
             .addTypeConverter(groupDbConvertor)
             .addTypeConverter(expenseDbConvertor)
             .fallbackToDestructiveMigration()
             .build()
     }
-
-    // --- DAO Providers ---
-    // These functions teach Hilt how to get each DAO from the single AppDatabase instance.
 
     @Provides
     @Singleton

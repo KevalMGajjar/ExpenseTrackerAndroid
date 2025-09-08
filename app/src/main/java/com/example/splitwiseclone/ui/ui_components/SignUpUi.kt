@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -22,6 +23,8 @@ import androidx.navigation.NavHostController
 import com.example.splitwiseclone.rest_api.api_viewmodels.UserApiViewModel
 import com.example.splitwiseclone.rest_api.models.User
 import com.example.splitwiseclone.ui_viewmodels.SignUpViewModel
+import com.example.splitwiseclone.R
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,7 +41,6 @@ fun SignUpUi(
     var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
-    // Get error states from the ViewModel
     val usernameError by signUpViewModel.usernameError
     val emailError by signUpViewModel.emailError
     val passwordError by signUpViewModel.passwordError
@@ -47,6 +49,9 @@ fun SignUpUi(
     val registrationSuccess by userApiViewModel.registrationSuccess.collectAsState()
     val registrationError by userApiViewModel.registrationError.collectAsState()
 
+    val snackBarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
     LaunchedEffect(registrationSuccess) {
         if (registrationSuccess) {
             isLoading = false
@@ -54,10 +59,17 @@ fun SignUpUi(
             userApiViewModel.resetRegistrationStatus()
         }
     }
+
     LaunchedEffect(registrationError) {
-        if (registrationError != null) {
+        registrationError?.let { error ->
             isLoading = false
-            // Here you can show a Snackbar with the registrationError message
+            scope.launch {
+                snackBarHostState.showSnackbar(
+                    message = error,
+                    duration = SnackbarDuration.Long
+                )
+            }
+            userApiViewModel.resetRegistrationStatus()
         }
     }
 
@@ -134,7 +146,10 @@ fun SignUpUi(
                 onValueChange = { signUpViewModel.storeCurrencyCode(it) },
                 label = { Text("Currency Code (e.g., USD, INR)") },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Add, null) },
+                leadingIcon = { Icon(
+                    painter = painterResource(id = R.drawable.currency_rupee_circle_24dp_e3e3e3_fill0_wght400_grad0_opsz24),
+                    contentDescription = "Currency Symbol"
+                )},
                 singleLine = true
             )
             Spacer(modifier = Modifier.height(32.dp))

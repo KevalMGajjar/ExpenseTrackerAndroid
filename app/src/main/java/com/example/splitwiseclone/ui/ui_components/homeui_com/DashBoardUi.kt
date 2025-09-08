@@ -38,11 +38,12 @@ import com.example.splitwiseclone.ui_viewmodels.DashBoardViewModel
 import com.example.splitwiseclone.ui_viewmodels.GroupBalanceSummary
 import com.example.splitwiseclone.ui_viewmodels.HomeUiState
 import com.example.splitwiseclone.ui_viewmodels.MonthlyExpenseSummary
+import com.example.splitwiseclone.utils.CurrencyUtils
+import com.example.splitwiseclone.utils.CurrencyUtils.formatCurrency
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-// --- Define Colors ---
 val PositiveBalanceColor = Color(0xFF4CAF50)
 val NegativeBalanceColor = Color(0xFFF44336)
 val SettledUpColor = Color(0xFF9E9E9E)
@@ -72,7 +73,6 @@ fun DashBoardUi(
                 title = { Text("Dashboard", fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = { navController.navigate("profileUi") }) {
-                        // FIX: Changed currentUser.profileUrl to currentUser.profilePicture
                         if (currentUser?.profileUrl?.isNotEmpty() == true) {
                             ProfileImage(
                                 model = currentUser?.profileUrl,
@@ -103,7 +103,6 @@ fun DashBoardUi(
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
                 item {
-                    // FIX: Replaced the old header with the new, swipeable balance pager.
                     BalancePager(balances = uiState!!.balances)
                     Spacer(modifier = Modifier.height(24.dp))
                 }
@@ -292,7 +291,6 @@ fun GroupListItem(groupSummary: GroupBalanceSummary, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // FIX: Show the group's actual profile picture for better UI consistency.
         AsyncImage(
             model = groupSummary.group.profilePicture,
             contentDescription = groupSummary.group.groupName,
@@ -307,19 +305,10 @@ fun GroupListItem(groupSummary: GroupBalanceSummary, onClick: () -> Unit) {
             Text(text = "${groupSummary.group.members?.size} people", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
         Text(
-            text = if (abs(balance) > 0.01) formatCurrency(balance) else "Settled Up",
+            text = if (abs(balance) > 0.01) CurrencyUtils.formatCurrency(balance) else "Settled Up",
             fontWeight = FontWeight.Bold,
             color = balanceColor
         )
     }
 }
 
-private fun formatCurrency(amount: Double, withSign: Boolean = false): String {
-    val amountAbs = abs(amount)
-    val sign = when {
-        amount > 0.01 && withSign -> "+ "
-        amount < -0.01 -> "- "
-        else -> ""
-    }
-    return String.format(Locale.US, "%s$%.2f", sign, amountAbs).replace("$-", "-$")
-}

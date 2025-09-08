@@ -16,13 +16,9 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.SubcomposeAsyncImage
 
-/**
- * A robust, reusable composable for displaying profile pictures.
- * It handles loading, placeholder, and error states automatically.
- */
 @Composable
 fun ProfileImage(
-    model: Any?, // Can be a URL string, URI, etc.
+    model: Any?,
     contentDescription: String?,
     modifier: Modifier = Modifier
 ) {
@@ -32,13 +28,11 @@ fun ProfileImage(
         modifier = modifier,
         contentScale = ContentScale.Crop,
         loading = {
-            // Show a loading indicator while the image is being fetched
             Box(modifier = Modifier.fillMaxSize().background(Color.LightGray), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator(strokeWidth = 2.dp, color = MaterialTheme.colorScheme.primary)
             }
         },
         error = {
-            // Show a default icon if the URL is null or fails to load
             Box(modifier = Modifier.fillMaxSize().background(Color.LightGray), contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,

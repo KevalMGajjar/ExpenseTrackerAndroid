@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,8 @@ import com.example.splitwiseclone.roomdb.expense.ExpenseRoomViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.example.splitwiseclone.R
+import com.example.splitwiseclone.utils.CurrencyUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,7 +45,6 @@ fun ActivityUi(
     var searchQuery by remember { mutableStateOf("") }
     var isSearchActive by remember { mutableStateOf(false) }
 
-    // Sort and filter expenses
     val filteredAndSortedExpenses = allExpenses
         .filter { expense ->
             expense.description?.contains(searchQuery, ignoreCase = true) == true
@@ -59,7 +61,6 @@ fun ActivityUi(
                 },
                 actions = {
                     if (isSearchActive) {
-                        // Show search field when active
                         OutlinedTextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
@@ -77,7 +78,6 @@ fun ActivityUi(
                             }
                         )
                     } else {
-                        // Show search icon when inactive
                         IconButton(onClick = { isSearchActive = true }) {
                             Icon(imageVector = Icons.Default.Search, contentDescription = "Search Activity")
                         }
@@ -111,13 +111,12 @@ fun ActivityUi(
 
 @Composable
 fun ExpenseItem(expense: Expense, onClick: () -> Unit) {
-    val formattedAmount = String.format(Locale.US, "$%.2f", expense.totalExpense)
-
+    val formattedAmount = CurrencyUtils.formatCurrency(expense.totalExpense)
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick) // Make the entire row clickable
+            .clickable(onClick = onClick)
     ) {
         Box(
             modifier = Modifier
@@ -127,7 +126,7 @@ fun ExpenseItem(expense: Expense, onClick: () -> Unit) {
             contentAlignment = Alignment.Center
         ) {
             Icon(
-                imageVector = Icons.Filled.PlayArrow,
+                painter = painterResource(R.drawable.attach_money_24dp_e3e3e3_fill0_wght400_grad0_opsz24),
                 contentDescription = "Expense Icon",
                 tint = MaterialTheme.colorScheme.onPrimaryContainer
             )
@@ -186,16 +185,13 @@ fun EmptyActivityView() {
     }
 }
 
-// Helper function to parse date string safely
 private fun String.toDate(): Date? {
     return try {
         SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(this)
     } catch (e: Exception) {
-        null // Return null if parsing fails
+        null
     }
 }
-
-// Helper function to format Date object into a readable string
 private fun Date.toFormattedString(): String {
     val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     return formatter.format(this)

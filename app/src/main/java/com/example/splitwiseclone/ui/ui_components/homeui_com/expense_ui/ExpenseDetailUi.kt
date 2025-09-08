@@ -23,12 +23,13 @@ import coil.compose.AsyncImage
 import com.example.splitwiseclone.roomdb.entities.Expense
 import com.example.splitwiseclone.ui_viewmodels.ExpenseDetailViewModel
 import com.example.splitwiseclone.ui_viewmodels.ParticipantDetails
+import com.example.splitwiseclone.utils.CurrencyUtils
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExpenseDetailUi(
+fun ExpenseDetailScreen(
     navController: NavHostController,
     viewModel: ExpenseDetailViewModel = hiltViewModel()
 ) {
@@ -106,7 +107,7 @@ fun ExpenseHeader(expense: Expense, userMap: Map<String, ParticipantDetails>) {
         Spacer(Modifier.height(8.dp))
         Text(text = expense.description ?: "Expense", style = MaterialTheme.typography.headlineSmall)
         Text(
-            text = String.format(Locale.US, "$%.2f", expense.totalExpense),
+            text = CurrencyUtils.formatCurrency(expense.totalExpense),
             style = MaterialTheme.typography.displaySmall,
             fontWeight = FontWeight.Bold
         )
@@ -130,7 +131,7 @@ fun PaidBySection(expense: Expense, userMap: Map<String, ParticipantDetails>) {
                 DetailRow(
                     imageUrl = payerDetails?.profilePic ?: "",
                     name = payerDetails?.name ?: "Unknown",
-                    detail = "paid ${String.format(Locale.US, "$%.2f", amountPaid)}"
+                    detail = "paid ${CurrencyUtils.formatCurrency(amountPaid)}"
                 )
             }
         }
@@ -176,14 +177,13 @@ fun DetailRow(imageUrl: String, name: String, detail: String, amount: Double? = 
         }
         amount?.let {
             Text(
-                text = String.format(Locale.US, "$%.2f", it),
+                text = CurrencyUtils.formatCurrency(amount),
                 fontWeight = FontWeight.Medium
             )
         }
     }
 }
 
-// --- Helper Functions ---
 private fun getCategoryIcon(description: String): ImageVector {
     return when {
         "uber" in description.lowercase() -> Icons.Default.PlayArrow

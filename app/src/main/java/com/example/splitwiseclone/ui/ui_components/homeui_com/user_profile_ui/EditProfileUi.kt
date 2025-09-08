@@ -78,8 +78,6 @@ fun EditProfileUi(
                     .clickable { imagePickerLauncher.launch("image/*") }
             ) {
                 AsyncImage(
-                    // FIX: The model now correctly prioritizes the newly selected image URI.
-                    // If imageUri is not null, it will be displayed. Otherwise, it falls back to the old URL.
                     model = uiState.imageUri ?: uiState.profilePictureUrl,
                     contentDescription = "Profile Picture",
                     modifier = Modifier.fillMaxSize().clip(CircleShape).background(Color.LightGray),

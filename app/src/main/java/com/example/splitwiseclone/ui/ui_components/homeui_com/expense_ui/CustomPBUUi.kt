@@ -20,9 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
-import com.example.splitwiseclone.ui_viewmodels.AddExpenseViewModel
 import com.example.splitwiseclone.ui_viewmodels.PaidByViewModel
-import com.example.splitwiseclone.ui_viewmodels.Participant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,10 +28,7 @@ fun CustomPBUUi(
     navController: NavHostController,
     parentEntry: NavBackStackEntry
 ) {
-    // Scope ViewModels to the parent screen's navigation entry to share state
     val paidByViewModel: PaidByViewModel = hiltViewModel(parentEntry)
-    val addExpenseViewModel: AddExpenseViewModel = hiltViewModel(parentEntry)
-
     val participants by paidByViewModel.participants.collectAsState()
     val selectedPayerId by paidByViewModel.selectedPayerId.collectAsState()
 
@@ -44,11 +39,11 @@ fun CustomPBUUi(
                 navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
                 actions = {
                     IconButton(onClick = {
-                        val payer = participants.find { it.id == selectedPayerId }
-                        addExpenseViewModel.commitPayerSelection(
-                            payers = listOfNotNull(selectedPayerId),
-                            text = "Paid by ${payer?.name ?: "1 person"}"
-                        )
+                        // Pass the result back to the previous screen
+                        val result = mapOf("payerIds" to listOfNotNull(selectedPayerId))
+                        navController.previousBackStackEntry
+                            ?.savedStateHandle
+                            ?.set("payer_result", result)
                         navController.popBackStack()
                     }) { Icon(Icons.Default.Check, "Done") }
                 }
@@ -81,10 +76,7 @@ fun CustomPaidByMultipleUi(
     navController: NavHostController,
     parentEntry: NavBackStackEntry
 ) {
-    // Scope ViewModels to the parent screen's navigation entry to share state
     val paidByViewModel: PaidByViewModel = hiltViewModel(parentEntry)
-    val addExpenseViewModel: AddExpenseViewModel = hiltViewModel(parentEntry)
-
     val participants by paidByViewModel.participants.collectAsState()
     val payerAmounts by paidByViewModel.payerAmounts.collectAsState()
 
@@ -95,13 +87,16 @@ fun CustomPaidByMultipleUi(
                 navigationIcon = { IconButton(onClick = { navController.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
                 actions = {
                     IconButton(onClick = {
-                        val finalPayers = payerAmounts.filter { it.value.isNotBlank() && (it.value.toDoubleOrNull() ?: 0.0) > 0.0 }
-                        addExpenseViewModel.commitPayerSelection(
-                            payers = finalPayers.keys.toList(),
-                            text = "Paid by ${finalPayers.size} people"
-                        )
-                        // Pop back twice to return to the Add Expense screen
-                        navController.popBackStack("addExpense?groupId={groupId}", inclusive = false)
+                        val finalPayers = payerAmounts
+                            .filter { it.value.isNotBlank() && (it.value.toDoubleOrNull() ?: 0.0) > 0.0 }
+                            .keys.toList()
+
+                        val result = mapOf("payerIds" to finalPayers)
+                        navController.getBackStackEntry(navController.graph.startDestinationId)
+                            .savedStateHandle
+                            .set("payer_result", result)
+
+                        navController.popBackStack(navController.graph.startDestinationId, false)
                     }) { Icon(Icons.Default.Check, "Done") }
                 }
             )
@@ -116,7 +111,7 @@ fun CustomPaidByMultipleUi(
                         onValueChange = { amount -> paidByViewModel.updatePayerAmount(participant.id, amount) },
                         label = { Text("Amount") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        prefix = { Text("$") }
+                        prefix = { Text("₹") }
                     )
                 }
             }

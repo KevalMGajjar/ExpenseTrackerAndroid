@@ -25,7 +25,6 @@ class SignUpViewModel @Inject constructor() : ViewModel() {
     private val _phoneNumber = mutableStateOf("")
     val phoneNumber: State<String> = _phoneNumber
 
-    // --- State for Validation Errors ---
     private val _usernameError = mutableStateOf<String?>(null)
     val usernameError: State<String?> = _usernameError
 
@@ -39,10 +38,9 @@ class SignUpViewModel @Inject constructor() : ViewModel() {
     val phoneNumberError: State<String?> = _phoneNumberError
 
 
-    // --- State Update Functions ---
     fun storeUsername(value: String) {
         _username.value = value
-        _usernameError.value = null // Clear error on change
+        _usernameError.value = null
     }
 
     fun storeEmail(value: String) {
@@ -64,10 +62,6 @@ class SignUpViewModel @Inject constructor() : ViewModel() {
         _phoneNumberError.value = null
     }
 
-    /**
-     * Validates all input fields and returns true if they are valid.
-     * Updates error states for the UI to observe.
-     */
     fun validateInputs(): Boolean {
         if (_username.value.isBlank()) {
             _usernameError.value = "Username cannot be empty"

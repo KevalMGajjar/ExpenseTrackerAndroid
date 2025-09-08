@@ -30,7 +30,6 @@ data class ExpenseDetailUiState(
 
 @HiltViewModel
 class ExpenseDetailViewModel @Inject constructor(
-    // FIX: Inject repositories and the API service directly, NOT other ViewModels.
     private val expenseRepository: ExpenseRepository,
     private val friendRepository: FriendRepository,
     private val userRepository: CurrentUserRepository,
@@ -72,7 +71,6 @@ class ExpenseDetailViewModel @Inject constructor(
         val expenseToDelete = uiState.value.expense ?: return
 
         viewModelScope.launch {
-            // FIX: The API call logic is now self-contained within this ViewModel.
             try {
                 val response = apiService.deleteExpense(expenseToDelete.id)
                 if (response.isSuccessful) {

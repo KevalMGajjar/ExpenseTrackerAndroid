@@ -10,6 +10,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.example.splitwiseclone.rest_api.api_viewmodels.GroupApiViewModel
 import com.example.splitwiseclone.rest_api.models.GroupApi
@@ -21,10 +23,10 @@ import com.example.splitwiseclone.roomdb.user.CurrentUserViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddNewGroupUi(
-    navHostController: NavHostController,
-    groupApiViewModel: GroupApiViewModel,
-    groupRoomViewModel: GroupRoomViewModel,
-    currentUserViewModel: CurrentUserViewModel
+    navHostController: NavController,
+    groupApiViewModel: GroupApiViewModel = hiltViewModel(),
+    groupRoomViewModel: GroupRoomViewModel = hiltViewModel(),
+    currentUserViewModel: CurrentUserViewModel = hiltViewModel()
 ) {
     var groupName by remember { mutableStateOf("") }
     var groupType by remember { mutableStateOf("") }
@@ -90,13 +92,7 @@ fun AddNewGroupUi(
                         isArchived = false
                     )
 
-                    // This is the correct asynchronous pattern.
-                    // Your `saveGroup` function in the ViewModel MUST be updated to accept a callback
-                    // that provides the new group's ID after the network call succeeds.
-                    // The required signature is:
-                    // fun saveGroup(group: GroupApi, onSuccess: (newGroupId: String) -> Unit)
                     groupApiViewModel.saveGroup(groupApiData) { newGroupId ->
-                        // This block executes ONLY after the server provides the new ID.
                         val initialMember = Member(
                             userId = user.currentUserId,
                             role = "admin",
@@ -105,7 +101,7 @@ fun AddNewGroupUi(
                             profilePicture = user.profileUrl ?: ""
                         )
                         val newGroup = Group(
-                            id = newGroupId, // Use the ID from the server
+                            id = newGroupId,
                             groupName = groupName,
                             groupCreatedByUserId = user.currentUserId,
                             groupType = groupType,
@@ -114,10 +110,9 @@ fun AddNewGroupUi(
                             members = listOf(initialMember)
                         )
 
-                        // Save the complete group to the local database and navigate.
                         groupRoomViewModel.insertGroup(newGroup) {
-                            navHostController.navigate("groupsUi") {
-                                popUpTo("groupsUi") { inclusive = true }
+                            navHostController.navigate("dashboard") {
+                                popUpTo("dashboard") { inclusive = true }
                             }
                         }
                     }

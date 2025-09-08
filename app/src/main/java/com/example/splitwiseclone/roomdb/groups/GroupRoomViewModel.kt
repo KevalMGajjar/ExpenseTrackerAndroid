@@ -10,6 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class GroupRoomViewModel @Inject constructor(
@@ -34,27 +36,18 @@ class GroupRoomViewModel @Inject constructor(
         }
     }
 
-    fun deleteGroup(group: Group, onSuccess: () -> Unit){
-        viewModelScope.launch {
-            try {
-                repository.deleteGroup(group)
-                onSuccess()
-            }catch (e: Exception){
-                Log.e("error", "Error while deleting Group", e)
-            }
-        }
-    }
 
-    fun updateGroup(group: Group, onSuccess: () -> Unit){
+    fun updateGroup(group: Group, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             try {
-                repository.updateGroup(group)
+                withContext(Dispatchers.IO) {
+                    repository.updateGroup(group)
+                }
                 onSuccess()
-            }catch (e: Exception){
+            } catch (e: Exception) {
                 Log.e("error", "Error while updating Group", e)
             }
         }
-
     }
 
 }

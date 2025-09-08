@@ -56,7 +56,6 @@ class EditProfileViewModel @Inject constructor(
         val currentState = _uiState.value
         _uiState.value = currentState.copy(isLoading = true)
 
-        // TODO: In a real app, upload the imageUri to a server and get back a URL.
         val newProfilePicUrl = if (currentState.imageUri != null) "https://new.image.url/from/server.jpg" else null
 
         val request = UpdateUserRequest(
@@ -70,21 +69,18 @@ class EditProfileViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                // 1. Call the API. It now returns the complete UserDto.
                 val updatedUserDto = apiService.updateCurrentUser(request)
 
-                // 2. Map the fresh data from the DTO to your local CurrentUser entity.
                 val updatedUserForDb = CurrentUser(
-                    currentUserId = updatedUserDto.userId, // Map from DTO's `userId`
+                    currentUserId = updatedUserDto.userId,
                     username = updatedUserDto.username,
                     email = updatedUserDto.email,
                     phoneNumber = updatedUserDto.phoneNumber,
-                    profileUrl = updatedUserDto.profilePicture, // Map from DTO's `profilePicture`
+                    profileUrl = updatedUserDto.profilePicture,
                     currencyCode = updatedUserDto.defaultCurrencyCode!!,
                     hashedPassword = updatedUserDto.hashedPassword!!
                 )
 
-                // 3. Save the new, correct user object to your local Room database.
                 currentUserRepository.insertUser(updatedUserForDb)
 
                 _uiState.value = _uiState.value.copy(isLoading = false)

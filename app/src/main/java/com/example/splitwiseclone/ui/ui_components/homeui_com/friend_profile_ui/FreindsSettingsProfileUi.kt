@@ -24,13 +24,13 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import com.example.splitwiseclone.roomdb.entities.Friend
 import com.example.splitwiseclone.roomdb.entities.Group
+import com.example.splitwiseclone.ui.ui_components.common.ProfileImage
 import com.example.splitwiseclone.ui_viewmodels.FriendSettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FriendSettingsUi(
+fun FriendSettingsScreen(
     navController: NavHostController,
-    // Use the new, dedicated ViewModel
     viewModel: FriendSettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -86,7 +86,6 @@ fun FriendSettingsUi(
                     HorizontalDivider()
                 }
 
-                // FIX: Display the list of actual shared groups
                 items(sharedGroups) { group ->
                     SharedGroupRow(
                         group = group,
@@ -106,10 +105,9 @@ fun FriendSettingsUi(
                     Button(
                         onClick = {
                             viewModel.deleteFriend {
-                                // On success, navigate all the way back to the main friends list
                                 showDeleteDialog = false
-                                navController.navigate("friendsUi") {
-                                    popUpTo("dashboard") { inclusive = false }
+                                navController.navigate("dashboard") {
+                                    popUpTo("dashboard") { inclusive = true }
                                 }
                             }
                         },
@@ -131,11 +129,10 @@ private fun UserInfoHeader(friend: Friend) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        AsyncImage(
+        ProfileImage(
             model = friend.profilePic,
             contentDescription = "Profile Picture",
-            modifier = Modifier.size(80.dp).clip(CircleShape).background(Color.LightGray),
-            contentScale = ContentScale.Crop
+            modifier = Modifier.size(80.dp).clip(CircleShape)
         )
         Text(text = friend.username ?: "Friend", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Text(text = friend.email ?: "No email", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
@@ -174,11 +171,10 @@ private fun SharedGroupRow(group: Group, onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        AsyncImage(
+        ProfileImage(
             model = group.profilePicture,
             contentDescription = "Group Image",
-            modifier = Modifier.size(48.dp).clip(CircleShape).background(Color.LightGray),
-            contentScale = ContentScale.Crop
+            modifier = Modifier.size(48.dp).clip(CircleShape)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
