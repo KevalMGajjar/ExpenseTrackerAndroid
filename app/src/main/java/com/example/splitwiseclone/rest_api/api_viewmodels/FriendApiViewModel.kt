@@ -32,7 +32,7 @@ class FriendApiViewModel @Inject constructor(
             phoneNumbers,
             currentUser.currentUserId,
             currentUser.email,
-            currentUser.profileUrl!!,
+            currentUser.profileUrl ?: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/1024px-Default_pfp.svg.png",
             currentUser.phoneNumber!!,
             currentUser.username
         )
