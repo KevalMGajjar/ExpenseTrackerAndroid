@@ -8,7 +8,7 @@ A modern, native Android expense tracker built with **100% Kotlin** and **Jetpac
 
 | Feature | Description | Screenshot |
 | :--- | :--- | :--- |
-| **Google Sign-In** | Secure and easy authentication using your Google account. | <img src="assets/WhatsApp Image 2025-09-08 at 20.50.53_d07d34f3.jpg" width="200" alt="Login with Google"/> |
+| **Google Sign-In** | Secure and easy authentication using your Google account. | <img src="https://github.com/KevalMGajjar/ExpenseTrackerAndroid/blob/KevalMGajjar-ui-photos/login.jpg" width="200" alt="Login with Google"/> |
 | **Effortless Expense Logging** | Quickly record what you spend, who you're with, and how it's split with a clean, intuitive UI. | <img src="https://github.com/KevalMGajjar/ExpenseTrackerAndroid/blob/KevalMGajjar-ui-photos/expense.jpg" width="200" alt="Add Expense"/> |
 | **Settle Up with Friends** | Easily track who owes whom and settle balances in a tap. | <img src="https://github.com/KevalMGajjar/ExpenseTrackerAndroid/blob/KevalMGajjar-ui-photos/SettleUpUi.jpg" width="200" alt="Settle Up"/> |
 | **Group Spending Made Easy** | Manage shared expenses in groups. Add members and track spending all in one place. | <img src="https://github.com/KevalMGajjar/ExpenseTrackerAndroid/blob/KevalMGajjar-ui-photos/GroupUi.jpg" width="200" alt="Group Details"/> |
@@ -27,6 +27,8 @@ This project follows modern Android development best practices, utilizing an **M
 ![Coroutines](https://img.shields.io/badge/Coroutines-E28B59?style=for-the-badge&logo=kotlin&logoColor=white)
 ![Hilt](https://img.shields.io/badge/Hilt-007396?style=for-the-badge&logo=docusign&logoColor=white)
 ![RoomDB](https://img.shields.io/badge/Room_DB-D4554A?style=for-the-badge&logo=sqlite&logoColor=white)
+![Retrofit](https://img.shields.io/badge/Retrofit-469490?style=for-the-badge&logo=square&logoColor=white)
+![OkHttp](https://img.shields.io/badge/OkHttp-469490?style=for-the-badge&logo=square&logoColor=white)
 
 - **UI:** Jetpack Compose & Material 3
 - **Asynchronous:** Kotlin Coroutines
@@ -55,15 +57,18 @@ To get the Android app running on your device:
     git clone [https://github.com/KevalMGajjar/ExpenseTrackerAndroid.git](https://github.com/KevalMGajjar/ExpenseTrackerAndroid.git)
     ```
 
-2.  **Open in Android Studio:**
-    - Open Android Studio (latest stable version recommended).
-    - Select `Open` and navigate to the cloned project directory.
+2.  **Project Configuration:**
+    - Open the project in Android Studio (latest stable version recommended).
+    - Navigate to the `utils` folder and open the `Constants.kt` file.
+    - Update the following values with your own configuration:
+        - `BASE_URL`: The URL of your running backend server.
+        - `JWT_SECRET`: Your secret key for JWT.
+        - `GOOGLE_SERVICE_STRING`: Your Google services string.
 
 3.  **Backend Setup:**
     - This app requires the Spring Boot backend to be running.
     - You can find the backend repository here: **[KevalMGajjar/ExpenseTrackerBackend](https://github.com/KevalMGajjar/ExpenseTrackerBackend)**
     - Clone and run the backend server separately, following the instructions in its README.
-    - Update the `BASE_URL` in the Android project's network configuration to point to your running server instance.
 
 4.  **Build & Run:**
     - Let Gradle sync all the dependencies.
