@@ -163,7 +163,7 @@ sealed class BottomBarScreen(
 ) {
     object DashBoard : BottomBarScreen(
         route = "dashboard_main",
-        title = "Dashboard",
+        title = "Home",
         icon = { Icon(Icons.Default.Home, contentDescription = "Dashboard") }
     )
     object Friends : BottomBarScreen(
