@@ -58,7 +58,6 @@ fun WelcomeUi(navHostController: NavHostController, userApiViewModel: UserApiVie
                 }
             } else {
                 navHostController.navigate("dashboard") {
-                    sy
                     popUpTo("welcome") { inclusive = true }
                 }
             }
