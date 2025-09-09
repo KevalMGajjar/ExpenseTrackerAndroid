@@ -70,7 +70,7 @@ fun DashBoardUi(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Dashboard", fontWeight = FontWeight.Bold) },
+                title = { Text("Home", fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = { navController.navigate("profileUi") }) {
                         if (currentUser?.profileUrl?.isNotEmpty() == true) {
